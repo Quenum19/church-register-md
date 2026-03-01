@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: church-register-api
+    env: node
+    region: frankfurt         # plus proche de l'Afrique de l'Ouest
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      # Les variables secrètes (MONGODB_URI, JWT_SECRET, etc.)
+      # sont à renseigner manuellement dans Render → Environment

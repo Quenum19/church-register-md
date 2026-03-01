@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Lato:wght@300;400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-color: #4A0E6B;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* Scrollbar personnalisée */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #4A0E6B; }
+  ::-webkit-scrollbar-thumb { background: #C9A227; border-radius: 3px; }
+}
+
+@layer components {
+  /* Bouton principal doré */
+  .btn-gold {
+    @apply relative overflow-hidden font-display font-semibold tracking-wide text-church-purple-dk
+           px-8 py-4 rounded-xl transition-all duration-300;
+    background: linear-gradient(135deg, #9B7A10 0%, #C9A227 40%, #E8C547 60%, #C9A227 100%);
+    background-size: 200% 200%;
+    box-shadow: 0 4px 24px rgba(201, 162, 39, 0.4);
+  }
+  .btn-gold:hover {
+    background-position: right center;
+    box-shadow: 0 8px 32px rgba(201, 162, 39, 0.6);
+    transform: translateY(-1px);
+  }
+  .btn-gold:active {
+    transform: translateY(0);
+  }
+  .btn-gold:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Bouton outline */
+  .btn-outline {
+    @apply border-2 border-church-gold text-church-gold font-body font-semibold
+           px-6 py-3 rounded-xl transition-all duration-200;
+  }
+  .btn-outline:hover {
+    @apply bg-church-gold text-church-purple-dk;
+  }
+
+  /* Card principale */
+  .church-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(251,243,220,0.4) 100%);
+    border: 1px solid rgba(201, 162, 39, 0.2);
+    border-radius: 1.5rem;
+    box-shadow: 0 24px 64px rgba(74,14,107,0.25), 0 4px 16px rgba(74,14,107,0.1);
+  }
+
+  /* Séparateur doré */
+  .gold-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #C9A227, transparent);
+  }
+
+  /* Input stylé */
+  .church-input {
+    @apply w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-sm
+           font-body transition-all duration-200 bg-white/80;
+  }
+  .church-input:focus {
+    @apply outline-none border-church-gold;
+    box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.12);
+  }
+  .church-input::placeholder {
+    @apply text-gray-400;
+  }
+
+  /* Badge progression */
+  .visit-badge {
+    @apply inline-flex items-center gap-1.5 text-xs font-body font-bold px-3 py-1 rounded-full tracking-wide uppercase;
+  }
+  .visit-badge-1 { @apply bg-church-purple/10 text-church-purple border border-church-purple/20; }
+  .visit-badge-2 { @apply bg-church-gold/10 text-church-gold-dk border border-church-gold/30; }
+  .visit-badge-3 { @apply bg-green-50 text-green-700 border border-green-200; }
+
+  /* Décoration coins */
+  .corner-ornament::before,
+  .corner-ornament::after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-color: rgba(201, 162, 39, 0.4);
+    border-style: solid;
+  }
+  .corner-ornament::before {
+    top: 16px; left: 16px;
+    border-width: 2px 0 0 2px;
+    border-radius: 4px 0 0 0;
+  }
+  .corner-ornament::after {
+    bottom: 16px; right: 16px;
+    border-width: 0 2px 2px 0;
+    border-radius: 0 0 4px 0;
+  }
+}
+
+/* Animations de fond */
+.bg-church-animated {
+  background: linear-gradient(135deg, #3D0A5A, #6B1F8A, #4A0E6B, #2D0845);
+  background-size: 400% 400%;
+  animation: shimmer 12s ease infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* Étoiles décoratives */
+.stars-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(201, 162, 39, 0.5);
+  border-radius: 50%;
+  animation: pulse_gold 3s ease-in-out infinite;
+}
+@keyframes pulse_gold {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.5); }
+}
+
+/* Opacité initiale 0 pour les animations fade-up */
+.opacity-init { opacity: 0; }
