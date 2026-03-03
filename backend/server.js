@@ -17,29 +17,20 @@ app.use(helmet());
 
 // ── 3. CORS ───────────────────────────────────────────────────────
 const ALLOWED = [
-  process.env.FRONTEND_URL,
-  'https://church-register-md.vercel.app',
+  process.env.FRONTEND_URL,          // ex: https://destiny-care.vercel.app
   'http://localhost:3000',
   'http://127.0.0.1:3000',
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-
-    if (ALLOWED.includes(origin)) {
-      return cb(null, true);
-    }
-
-    console.log("❌ Origin bloquée:", origin);
-    return cb(new Error('Origine non autorisée'));
+    if (!origin || ALLOWED.includes(origin)) return cb(null, true);
+    cb(new Error('Origine non autorisée'));
   },
-  credentials: true,
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  credentials:    true,
+  methods:        ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
 }));
-
-app.options('*', cors());
 
 // ── 4. Parsing ────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
