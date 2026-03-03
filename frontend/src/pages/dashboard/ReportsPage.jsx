@@ -349,13 +349,13 @@ const ReportsPage = () => {
             Un rapport par famille · Cron automatique le 1er du mois à 08h00
           </p>
         </div>
-        {/* {isSuperAdmin && (
+        {isSuperAdmin && (
           <button onClick={handleTestEmail} disabled={testingEmail}
             className="px-4 py-2 rounded-xl border-2 border-gray-200 text-xs text-gray-500 font-body
                        font-semibold hover:border-church-purple/40 transition-all">
             {testingEmail ? '📧 Envoi…' : '🧪 Tester email'}
           </button>
-        )} */}
+        )}
       </div>
 
       {/* Onglets */}
