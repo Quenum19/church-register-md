@@ -1,0 +1,38 @@
+/* Impression de l'affiche QR code (window.print) : seule l'affiche est imprimée.
+   Actif uniquement quand la page QR code est affichée (attribut posé sur <html>). */
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+@media print {
+  /* Tout ce qui ne contient pas l'affiche disparaît (pas de pages blanches). */
+  :root[data-print-poster] body *:not(:has(#qr-poster)):not(#qr-poster, #qr-poster *) {
+    display: none !important;
+  }
+
+  /* Ancêtres de l'affiche : neutres. */
+  :root[data-print-poster] body :has(#qr-poster) {
+    display: block !important;
+    position: static !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: none !important;
+  }
+
+  :root[data-print-poster] #qr-poster {
+    width: 100%;
+    max-width: 180mm;
+    margin: 0 auto;
+    border-radius: 0;
+    box-shadow: none;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

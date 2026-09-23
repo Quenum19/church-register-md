@@ -1,0 +1,15 @@
+/* Jetons de marque — Église La Maison de la Destinée.
+   Partagés par la feuille publique (styles.css) et celle du dashboard (admin/admin.css). */
+@theme {
+  --color-church-purple: #6b1f8a;
+  --color-church-purple-dk: #4a0e6b;
+  --color-church-purple-lg: #8b35aa;
+  --color-church-purple-xl: #f3e8ff;
+  --color-church-gold: #c9a227;
+  --color-church-gold-lt: #e8c547;
+  --color-church-gold-dk: #7a5f0c; /* assombri pour atteindre 4,5:1 sur fond clair */
+  --color-church-gold-pale: #fbf3dc;
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Lato", "Helvetica Neue", Arial, sans-serif;
+}

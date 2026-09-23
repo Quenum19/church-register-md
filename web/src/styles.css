@@ -1,0 +1,35 @@
+@import "tailwindcss" source(none);
+@import "./theme.css";
+
+/* Seuls le parcours public et le socle commun sont analysés : les classes du
+   dashboard vont dans admin/admin.css, chargée uniquement sur /admin. */
+@source "./public";
+@source "./shared";
+@source "../index.html";
+
+
+@layer base {
+  html {
+    font-family: var(--font-body);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-church-purple-xl text-gray-900 antialiased;
+  }
+  /* 16 px minimum : pas de zoom automatique sur iOS */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

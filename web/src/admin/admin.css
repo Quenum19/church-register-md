@@ -1,0 +1,7 @@
+/* Utilitaires du dashboard, chargés uniquement avec /admin.
+   Le preflight et la base viennent déjà de styles.css (non dupliqués ici). */
+@import "tailwindcss/theme.css" layer(theme);
+@import "../theme.css";
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./";
+@source "../shared";
