@@ -11,7 +11,8 @@ Registre des visiteurs de l'Église La Maison de la Destinée.
 
 Cahier des charges : [docs/cahier-refonte.md](docs/cahier-refonte.md) · Contrat d'API :
 [docs/api-contract.md](docs/api-contract.md) · Mise en production :
-[docs/deploiement.md](docs/deploiement.md).
+[docs/deploiement.md](docs/deploiement.md) · Recette avant ouverture :
+[docs/recette.md](docs/recette.md).
 
 ## Architecture
 
@@ -166,6 +167,7 @@ docs/
   cahier-refonte.md     cahier des charges (décisions, sécurité, déploiement)
   api-contract.md       contrat d'API (source de vérité api/ ↔ web/)
   deploiement.md        mise en production et exploitation Hostinger
+  recette.md            tests manuels à faire avant d'ouvrir aux visiteurs
 scripts/
   build-release.sh      construit l'archive de production
   check-bundle-size.mjs budget de taille du SPA
