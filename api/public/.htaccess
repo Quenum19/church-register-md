@@ -80,6 +80,13 @@ Options -Indexes
 <IfModule mod_headers.c>
     Header unset X-Powered-By
 
+    # CSP réaffirmée ici parce que certains hébergeurs (Hostinger/LiteSpeed) imposent au niveau
+    # serveur « Content-Security-Policy: upgrade-insecure-requests », qui écrase celle posée par
+    # l'application. Les directives d'un .htaccess sont fusionnées en dernier : celle-ci gagne.
+    # Elle DOIT rester identique à App\Http\Middleware\SecurityHeaders::CONTENT_SECURITY_POLICY
+    # (vérifié par tests/Feature/Http/SecurityHeadersTest.php).
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+
     <FilesMatch "\.(html|js|mjs|css|map|json|webmanifest|txt|xml|svg|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf)$">
         Header set X-Content-Type-Options "nosniff"
     </FilesMatch>
