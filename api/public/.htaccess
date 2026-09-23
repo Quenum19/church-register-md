@@ -1,0 +1,106 @@
+# Church Register — configuration Apache / LiteSpeed (Hostinger).
+#
+# La racine web du sous-domaine pointe vers DEPLOY_PATH/current/public : l'application
+# (.env, vendor/, storage/…) n'est JAMAIS dans la racine web. Les règles de blocage
+# ci-dessous sont une défense en profondeur, et empêchent aussi la route de repli du SPA
+# de répondre 200 sur ces chemins.
+#
+# Les en-têtes de sécurité (CSP, HSTS, X-Frame-Options…) des réponses PHP viennent du
+# middleware Laravel ; ce fichier ne traite que les fichiers statiques.
+# `php artisan serve` ignore ce fichier : rien ici n'est nécessaire au fonctionnement en dev.
+
+DirectoryIndex index.php
+Options -Indexes
+
+<IfModule mod_negotiation.c>
+    Options -MultiViews
+</IfModule>
+
+# --- Types MIME ------------------------------------------------------------------------
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+    AddType font/woff2 .woff2
+    AddType font/woff .woff
+    AddType text/javascript .js .mjs
+    AddCharset utf-8 .html .css .js .mjs .json .webmanifest .txt .svg
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # --- 1. HTTPS forcé (301), sauf en local ; tient compte d'un proxy/CDN qui termine TLS.
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$ [NC]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # --- 2. Fichiers cachés et sensibles : 403, qu'ils existent ou non.
+    # Fichiers et dossiers cachés (.env, .git, .htaccess, .user.ini…), sauf /.well-known/ (SSL).
+    RewriteRule (^|/)\.(?!well-known(/|$)) - [F,L]
+    # Dossiers de l'application (au cas où la racine web serait mal configurée).
+    RewriteRule ^(vendor|node_modules|bootstrap|config|database|routes|tests|storage/(app|framework|logs))(/|$) - [F,L,NC]
+    # Fichiers de dépendances, d'outillage et scripts.
+    RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit(\.dist)?\.xml(\.dist)?|phpstan(-baseline)?\.neon(\.dist)?|pint\.json|rector\.php|server\.php|vite\.config\.[cm]?[jt]s|REVISION)$ - [F,L,NC]
+    # Extensions sensibles (journaux, sauvegardes, bases, configs, archives).
+    # Attention : ne pas y ajouter csv/xlsx/pdf (exports de l'API : /api/admin/exports/visitors.csv…).
+    RewriteRule \.(env|log|sql|sqlite|db|bak|backup|old|orig|save|swp|dist|ini|conf|sh|lock|md|ya?ml|neon|tar|gz|tgz|zip|7z|rar)$ - [F,L,NC]
+
+    # --- 3. spa.html n'est servi que par Laravel (route de repli + en-têtes de sécurité).
+    RewriteRule ^spa\.html$ / [R=301,L]
+
+    # --- 4. Fichier absent sous /assets/ : 404 natif, jamais le HTML du SPA à la place d'un JS/CSS.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^assets/ - [L]
+
+    # --- 5. Laravel : en-têtes transmis à PHP, slash final, contrôleur frontal.
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# --- En-têtes des fichiers statiques ---------------------------------------------------
+<IfModule mod_setenvif.c>
+    SetEnvIf Request_URI "^/assets/" CR_HASHED_ASSET
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header unset X-Powered-By
+
+    <FilesMatch "\.(html|js|mjs|css|map|json|webmanifest|txt|xml|svg|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf)$">
+        Header set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+
+    # /assets/* : noms hachés par Vite (le contenu ne change jamais pour une URL donnée).
+    <FilesMatch "\.(js|mjs|css|svg|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf)$">
+        Header set Cache-Control "public, max-age=31536000, immutable" env=CR_HASHED_ASSET
+    </FilesMatch>
+
+    # Filet de sécurité si la redirection de spa.html (règle 3) était désactivée.
+    <Files "spa.html">
+        Header set Cache-Control "no-cache"
+    </Files>
+
+    # Fichiers non hachés : toujours revalidés.
+    <FilesMatch "^(manifest\.webmanifest|robots\.txt|favicon\.ico)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# --- Compression (LiteSpeed compresse aussi nativement) -------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml text/javascript application/javascript application/json application/manifest+json image/svg+xml
+</IfModule>
