@@ -1,3 +1,45 @@
+# --- Secrets : aucun .env réel n'est versionné (seuls les .env.example le sont) -----------
+.env
+.env.*
+!.env.example
+
+# --- api/ (compléments de api/.gitignore) ---------------------------------------------
+/api/vendor/
+/api/node_modules/
+/api/public/build/
+/api/public/hot
+/api/public/storage
+/api/storage/*.key
+/api/.phpunit.cache/
+/api/.phpunit.result.cache
+/api/coverage/
+# SPA copié par scripts/build-release.sh (jamais dans le api/ de travail, par sécurité)
+/api/public/spa.html
+/api/public/assets/
+
+# --- web/ (compléments de web/.gitignore) ---------------------------------------------
+/web/node_modules/
+/web/dist/
+/web/.build-*/
+/web/coverage/
+/web/*.local
+
+# --- Artefacts de release (scripts/build-release.sh) ----------------------------------
+/release/
+/release.tar.gz
+/release-*.tar.gz
+
+# --- Journaux et caches ---------------------------------------------------------------
+*.log
+.phpunit.result.cache
+
+# --- Éditeurs --------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# --- Ancien code (supprimé plus tard) --------------------------------------------------
 # Backend
 backend/node_modules/
 backend/.env
@@ -9,6 +51,6 @@ frontend/.env
 frontend/.env.local
 frontend/build/
 
-# OS
+# --- OS --------------------------------------------------------------------------------
 .DS_Store
 Thumbs.db

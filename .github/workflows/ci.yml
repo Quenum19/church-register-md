@@ -1,0 +1,159 @@
+name: CI
+
+# Les actions tierces sont épinglées sur un SHA de commit complet (le tag reste en commentaire) :
+# un tag Git est déplaçable, un SHA non — le code exécuté par la CI ne peut donc pas changer
+# sous nos pieds. Pour monter de version : relever le SHA du nouveau tag, par exemple
+#   gh api repos/actions/checkout/git/ref/tags/v7 --jq .object.sha
+# (si .object.type vaut « tag », déréférencer avec gh api repos/<owner>/<repo>/git/tags/<sha>).
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  # Appelée par deploy.yml : le déploiement ne part que si toute la CI est verte.
+  workflow_call:
+
+permissions:
+  contents: read
+
+# Annule les exécutions obsolètes d'une même branche / PR.
+# github.workflow vaut « CI » en exécution directe et le nom de l'appelant (« Déploiement »)
+# en workflow_call : les deux groupes restent distincts (pas d'annulation croisée ni d'interblocage).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (Laravel)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: api
+
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root-password
+          MARIADB_DATABASE: church_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: mariadb
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: church_test
+      DB_USERNAME: root
+      DB_PASSWORD: ci-root-password
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: PHP 8.3
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo_mysql, zip, gd, bcmath, sodium
+          coverage: none
+          tools: composer:v2
+
+      - name: Dossier de cache Composer
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php8.3-${{ hashFiles('api/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php8.3-
+
+      - name: composer install
+        id: install
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Fichier .env de test
+        id: env
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi --force
+
+      # Les contrôles suivants s'exécutent tous (même si l'un échoue) pour un retour complet.
+      - name: Style (Pint)
+        if: ${{ !cancelled() && steps.env.outcome == 'success' }}
+        run: composer lint
+
+      - name: Analyse statique (Larastan)
+        if: ${{ !cancelled() && steps.env.outcome == 'success' }}
+        run: composer analyse
+
+      - name: Tests (Pest, MariaDB 11)
+        if: ${{ !cancelled() && steps.env.outcome == 'success' }}
+        run: composer test
+
+      - name: Audit de sécurité des dépendances
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: composer audit --no-interaction
+
+  web:
+    name: Web (Vite + React)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: npm ci
+        id: install
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint (oxlint)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
+
+      - name: Types (tsc)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+
+      - name: Tests (Vitest)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
+
+      - name: Build
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run build
+
+      - name: Budget de taille du chargement initial
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: node ../scripts/check-bundle-size.mjs 100 --dist dist
+
+      - name: Audit de sécurité des dépendances de production
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm audit --omit=dev --audit-level=high

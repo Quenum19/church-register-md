@@ -1,0 +1,14 @@
+version: 2
+
+# Les actions des workflows sont épinglées sur un SHA de commit (voir l'en-tête de ci.yml).
+# Sans suivi, un SHA épinglé vieillit et garde une faille corrigée depuis : Dependabot ouvre
+# une pull request quand une nouvelle version paraît, en mettant à jour le SHA *et* le
+# commentaire de version. La CI (lint, tests, budget, audits) valide chaque mise à jour.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'ci'

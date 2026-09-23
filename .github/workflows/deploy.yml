@@ -1,0 +1,181 @@
+name: Déploiement
+
+# Production Hostinger via SSH. Procédure complète : docs/deploiement.md.
+#
+# Secrets de l'environnement GitHub « production » :
+#   SSH_HOST, SSH_PORT (65002 par défaut), SSH_USER, SSH_PRIVATE_KEY, SSH_KNOWN_HOSTS,
+#   DEPLOY_PATH (chemin absolu, ex. /home/u123456789/church-register), APP_URL (https://…)
+# Variables de l'environnement « production » :
+#   PHP_BIN (PHP CLI 8.3 du serveur, ex. /opt/alt/php83/usr/bin/php ; défaut : php)
+#   WEB_ROOT_MIRROR (facultative, plan B sans lien symbolique : voir docs/deploiement.md)
+#
+# Comme dans ci.yml, les actions tierces sont épinglées sur un SHA de commit complet (tag en
+# commentaire) : ce qui fabrique et envoie l'archive de production ne peut pas changer sans un
+# commit ici. Procédure de mise à jour : voir l'en-tête de ci.yml.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un seul déploiement à la fois, jamais annulé en cours de route.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Build de la release
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: PHP 8.3
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo_mysql, zip, gd, bcmath, sodium
+          coverage: none
+          tools: composer:v2
+
+      # Pas de cache de dépendances pour la release : tout est retéléchargé et vérifié
+      # (pas de risque d'empoisonnement de cache dans ce qui part en production).
+      - name: Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Construction de l'archive
+        run: bash scripts/build-release.sh --output "$RUNNER_TEMP/release/release.tar.gz"
+
+      - name: Publication de l'archive
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-${{ github.sha }}
+          path: ${{ runner.temp }}/release/release.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  deploy:
+    name: Mise en production
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Les secrets ne sont exposés qu'à ce job, qui n'exécute aucun code tiers (ni npm ni composer).
+    environment: production
+    env:
+      RELEASE_SHA: ${{ github.sha }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      APP_URL: ${{ secrets.APP_URL }}
+      PHP_BIN: ${{ vars.PHP_BIN || 'php' }}
+      WEB_ROOT_MIRROR: ${{ vars.WEB_ROOT_MIRROR }}
+
+    steps:
+      - name: Récupération des scripts de déploiement
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            deploy
+            scripts
+
+      - name: Récupération de l'archive
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-${{ github.sha }}
+          path: ${{ runner.temp }}/release
+
+      - name: Configuration SSH (clé et empreinte serveur épinglée)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          missing=()
+          for name in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_KNOWN_HOSTS DEPLOY_PATH APP_URL; do
+            [[ -n "${!name}" ]] || missing+=("$name")
+          done
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "::error::Secrets manquants dans l'environnement « production » : ${missing[*]}"
+            exit 1
+          fi
+          if [[ "$DEPLOY_PATH" != /* ]]; then
+            echo "::error::DEPLOY_PATH doit être un chemin absolu (ex. /home/u123456789/church-register)."
+            exit 1
+          fi
+          if [[ "$APP_URL" != https://* ]]; then
+            echo "::error::APP_URL doit commencer par https://"
+            exit 1
+          fi
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts_production
+          chmod 644 ~/.ssh/known_hosts_production
+          cat > ~/.ssh/config << EOF
+          Host production
+            HostName ${SSH_HOST}
+            Port ${SSH_PORT:-65002}
+            User ${SSH_USER}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            UserKnownHostsFile ~/.ssh/known_hosts_production
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ConnectTimeout 20
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+          EOF
+          chmod 600 ~/.ssh/config
+          ssh production true
+          echo "Connexion SSH vérifiée."
+
+      - name: Envoi de la release et du script de déploiement
+        run: |
+          remote_dir="$(printf '%q' "$DEPLOY_PATH")"
+          # shellcheck disable=SC2029 # expansion locale voulue (valeurs échappées par printf %q)
+          ssh production "mkdir -p $remote_dir/uploads $remote_dir/bin"
+          scp -q "$RUNNER_TEMP/release/release.tar.gz" "production:$DEPLOY_PATH/uploads/$RELEASE_SHA.tar.gz"
+          scp -q deploy/remote-deploy.sh "production:$DEPLOY_PATH/bin/remote-deploy.sh"
+
+      - name: Déploiement distant (migrations, caches, bascule atomique)
+        run: |
+          # shellcheck disable=SC2029 # expansion locale voulue (valeurs échappées par printf %q)
+          ssh production "$(printf '%q ' env DEPLOY_PATH="$DEPLOY_PATH" PHP_BIN="$PHP_BIN" \
+            WEB_ROOT_MIRROR="$WEB_ROOT_MIRROR" bash "$DEPLOY_PATH/bin/remote-deploy.sh" "$RELEASE_SHA")"
+
+      - name: Test de fumée
+        id: smoke
+        run: bash scripts/smoke-test.sh "$APP_URL"
+
+      - name: Retour arrière automatique
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: |
+          echo "::error::Test de fumée en échec : retour à la release précédente."
+          # shellcheck disable=SC2029
+          ssh production "$(printf '%q ' env DEPLOY_PATH="$DEPLOY_PATH" PHP_BIN="$PHP_BIN" \
+            WEB_ROOT_MIRROR="$WEB_ROOT_MIRROR" bash "$DEPLOY_PATH/bin/remote-deploy.sh" --rollback)"
+          bash scripts/smoke-test.sh "$APP_URL" || echo "::error::La release précédente échoue aussi au test de fumée : intervention manuelle requise."
+
+      - name: Suppression de la clé SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/config

@@ -1,0 +1,30 @@
+# Fins de ligne LF partout (scripts exécutés sous Linux : CI et serveur Hostinger).
+* text=auto eol=lf
+
+# Binaires : ni conversion de fin de ligne ni diff texte.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.avif  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.pdf   binary
+*.xlsx  binary
+*.zip   binary
+*.gz    binary
+
+# Diffs plus lisibles.
+*.php       diff=php
+*.blade.php diff=html
+*.css       diff=css
+*.html      diff=html
+*.md        diff=markdown
+
+# Fichiers générés : repliés dans les revues GitHub.
+api/composer.lock       linguist-generated=true
+web/package-lock.json   linguist-generated=true
