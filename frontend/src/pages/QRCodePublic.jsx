@@ -63,7 +63,7 @@ const QRCodePublic = () => {
             <span style={{ fontSize: 32 }}>🏛️</span>
           </div>
           <h1 className="font-display text-2xl font-bold text-white leading-tight">
-            La Maison de la Destinée
+           Eglise La Maison de la Destinée
           </h1>
           <div style={{
             height: 2, width: 80,

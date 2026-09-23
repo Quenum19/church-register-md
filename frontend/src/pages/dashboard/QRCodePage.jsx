@@ -414,7 +414,7 @@ const QRCodePage = () => {
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 text-3xl">🏛️</div>
-              <h1 className="font-display text-2xl font-bold text-white">La Maison de la Destinée</h1>
+              <h1 className="font-display text-2xl font-bold text-white">Eglise La Maison de la Destinée</h1>
               <div style={{ height:2, width:80, background:'linear-gradient(90deg,transparent,#C9A227,transparent)', margin:'10px auto' }} />
               <p className="text-white/60 text-sm font-body">Bienvenue parmi nous 🙏</p>
             </div>

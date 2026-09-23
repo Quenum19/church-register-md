@@ -57,7 +57,7 @@ const LoginPage = () => {
               <img src={logo} alt="MD" className="w-16 h-16 object-contain relative z-10" />
             </div>
             <h1 className="font-display text-xl font-bold text-church-purple">Administration</h1>
-            <p className="text-xs text-gray-400 font-body mt-1">La Maison de la Destinée</p>
+            <p className="text-xs text-gray-400 font-body mt-1">Eglise La Maison de la Destinée</p>
             <div className="gold-divider mt-3" />
           </div>
 

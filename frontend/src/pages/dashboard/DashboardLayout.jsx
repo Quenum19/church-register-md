@@ -83,7 +83,7 @@ const DashboardLayout = ({ activePage, onNavigate, children }) => {
         {!collapsed && (
           <div className="flex-1 min-w-0">
             <p className="font-display text-xs font-bold text-white uppercase tracking-wide leading-tight truncate">
-              Maison de la Destinée
+              Eglise La Maison de la Destinée
             </p>
             <p className="text-purple-300 text-xs font-body">Administration</p>
           </div>

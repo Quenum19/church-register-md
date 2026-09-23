@@ -45,7 +45,7 @@ const ConfirmModal = ({ type, visitor, onConfirm, onCancel }) => {
         </h3>
         <p className="text-sm text-gray-500 font-body text-center mb-1">
           {isConvert
-            ? <>Confirmer la conversion de <strong className="text-gray-700">{name}</strong> en membre officiel de la Maison de la Destinée ?</>
+            ? <>Confirmer la conversion de <strong className="text-gray-700">{name}</strong> en membre officiel de l'Eglise La Maison de la Destinée ?</>
             : <>Supprimer définitivement la fiche de <strong className="text-gray-700">{name}</strong> ?</>}
         </p>
         {!isConvert && (

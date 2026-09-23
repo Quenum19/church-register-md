@@ -153,7 +153,7 @@ const DonePage = ({ visitCount, visitor, onBack }) => {
           <div className="mt-6 flex items-center justify-center gap-2 opacity-20 opacity-init animate-fade-up-d4">
             <img src={logo} alt="MD" className="w-7 h-7 object-contain" />
             <span className="font-display text-xs text-church-purple uppercase tracking-widest">
-              La Maison de la Destinée
+              Eglise La Maison de la Destinée
             </span>
           </div>
         </div>

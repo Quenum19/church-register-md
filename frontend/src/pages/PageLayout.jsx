@@ -64,7 +64,7 @@ const PageLayout = ({ visitNumber, title, subtitle, onBack, children }) => {
               <img src={logo} alt="MD" className="w-10 h-10 object-contain shrink-0" />
               <div>
                 <p className="font-display text-xs font-semibold text-church-purple uppercase tracking-wider leading-snug">
-                  La Maison<br />de la Destinée
+                  Eglise La Maison<br />de la Destinée
                 </p>
               </div>
             </div>
