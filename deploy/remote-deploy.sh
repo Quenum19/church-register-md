@@ -296,7 +296,12 @@ mirror_web_root() {
 # Supprime de la racine web miroir les assets qui n'existent plus dans aucune release conservée.
 prune_web_root_assets() {
   [[ -n "$WEB_ROOT_MIRROR" && -d "$WEB_ROOT_MIRROR/assets" && ! -L "$WEB_ROOT_MIRROR" ]] || return 0
-  local file rel dir used
+  local file rel dir used list
+  # Fichier temporaire plutôt qu'une substitution de processus : /dev/fd n'est pas
+  # disponible sur certains hébergements mutualisés (CloudLinux), où « < <(…) »
+  # échoue avec « /dev/fd/63: No such file or directory ».
+  list="$(mktemp)"
+  find "$WEB_ROOT_MIRROR/assets" -type f -print0 > "$list"
   while IFS= read -r -d '' file; do
     rel="${file#"$WEB_ROOT_MIRROR/assets/"}"
     used=0
@@ -307,7 +312,8 @@ prune_web_root_assets() {
       fi
     done
     [[ $used == 1 ]] || rm -f -- "$file"
-  done < <(find "$WEB_ROOT_MIRROR/assets" -type f -print0)
+  done < "$list"
+  rm -f -- "$list"
 }
 
 after_switch() {
@@ -322,7 +328,12 @@ prune_releases() {
   local current keep=() name dir
   current="$(current_release 2> /dev/null || true)"
   if [[ -f "$HISTORY" ]]; then
-    mapfile -t keep < <(tail -n "$KEEP_RELEASES" "$HISTORY")
+    # mapfile depuis un fichier : voir prune_web_root_assets (pas de /dev/fd ici).
+    local tail_file
+    tail_file="$(mktemp)"
+    tail -n "$KEEP_RELEASES" "$HISTORY" > "$tail_file"
+    mapfile -t keep < "$tail_file"
+    rm -f -- "$tail_file"
   fi
   for dir in "$RELEASES"/*/; do
     [[ -d "$dir" ]] || continue
