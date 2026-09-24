@@ -94,9 +94,26 @@ class PhoneNumberService
         $util = PhoneNumberUtil::getInstance();
 
         try {
-            return $util->format($util->parse($e164, 'ZZ'), PhoneNumberFormat::INTERNATIONAL);
+            $number = $util->parse($e164, 'ZZ');
         } catch (NumberParseException) {
             return $e164;
         }
+
+        // libphonenumber écrirait « +225 07 79 05 5423 » (dernier groupe à quatre chiffres) alors
+        // que le dashboard affiche des groupes de deux. Les exports et les e-mails s'alignent sur
+        // l'affichage vu par les administrateurs. Les chiffres sont repris de la forme E.164 :
+        // getNationalNumber() est un entier, il perdrait le zéro initial des numéros ivoiriens.
+        $code = (string) $number->getCountryCode();
+        $national = substr($util->format($number, PhoneNumberFormat::E164), 1 + strlen($code));
+
+        if ($national === '') {
+            return $e164;
+        }
+
+        $groups = strlen($national) % 2 === 0
+            ? str_split($national, 2)
+            : array_merge([$national[0]], str_split(substr($national, 1), 2));
+
+        return '+'.$code.' '.implode(' ', $groups);
     }
 }

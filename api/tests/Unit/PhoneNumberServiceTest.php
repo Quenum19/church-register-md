@@ -94,7 +94,11 @@ describe('hash', function (): void {
     })->throws(RuntimeException::class);
 });
 
-it('formate un numéro E.164 pour l\'affichage', function (): void {
-    expect(PhoneNumberService::formatInternational('+2250700000000'))->toBe('+225 07 00 00 0000')
+it('formate un numéro E.164 en groupes de deux chiffres, comme le dashboard', function (): void {
+    expect(PhoneNumberService::formatInternational('+2250700000000'))->toBe('+225 07 00 00 00 00')
+        // Le zéro initial ivoirien est conservé (getNationalNumber() le perdrait).
+        ->and(PhoneNumberService::formatInternational('+2250779055423'))->toBe('+225 07 79 05 54 23')
+        // Nombre impair de chiffres : premier groupe d'un seul chiffre (France sans le 0 national).
+        ->and(PhoneNumberService::formatInternational('+33612345678'))->toBe('+33 6 12 34 56 78')
         ->and(PhoneNumberService::formatInternational('invalide'))->toBe('invalide');
 });

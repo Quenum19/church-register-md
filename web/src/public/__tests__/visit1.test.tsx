@@ -80,20 +80,59 @@ describe('Formulaire de la 1re visite', () => {
     expect(within(summary()).getByText("Précisez comment vous avez connu l'Église.")).toBeInTheDocument()
   })
 
-  it('le groupe WhatsApp exige un numéro WhatsApp ou « même numéro »', async () => {
+  it('propose trois choix WhatsApp et ne révèle les champs que pour « un autre numéro »', async () => {
+    const user = userEvent.setup({ delay: null })
+    renderPublic('/visite/1')
+    await heading('Votre 1re visite')
+
+    const group = screen.getByRole('group', { name: 'Votre numéro WhatsApp' })
+    const options = within(group).getAllByRole('radio')
+    expect(options.map((r) => (r as HTMLInputElement).value)).toEqual(['same', 'other', 'none'])
+    expect(options[0]).toHaveAccessibleName("Mon numéro WhatsApp est celui saisi à l'accueil : +225 07 00 00 00 00")
+    expect(options[1]).toHaveAccessibleName("J'utilise un autre numéro WhatsApp")
+    expect(options[2]).toHaveAccessibleName("Je n'ai pas de WhatsApp")
+    // Le numéro de l'accueil est proposé par défaut : aucun champ à remplir.
+    expect(within(group).getByRole('radio', { name: /celui saisi à l'accueil/ })).toBeChecked()
+    expect(screen.queryByLabelText(/Numéro WhatsApp/)).not.toBeInTheDocument()
+
+    await user.click(within(group).getByRole('radio', { name: "J'utilise un autre numéro WhatsApp" }))
+    expect(screen.getByLabelText('Pays du numéro WhatsApp')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Numéro WhatsApp/)).toBeInTheDocument()
+
+    await user.click(within(group).getByRole('radio', { name: "Je n'ai pas de WhatsApp" }))
+    expect(screen.queryByLabelText('Pays du numéro WhatsApp')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Numéro WhatsApp/)).not.toBeInTheDocument()
+  })
+
+  it('« Je n’ai pas de WhatsApp » est incompatible avec la demande de groupe', async () => {
     const user = userEvent.setup({ delay: null })
     renderPublic('/visite/1')
     await heading('Votre 1re visite')
     await user.click(screen.getByRole('checkbox', { name: /rejoindre le groupe WhatsApp/ }))
+    const none = screen.getByRole('radio', { name: "Je n'ai pas de WhatsApp" })
+    await user.click(none)
     await submit(user)
-    const message = 'Pour rejoindre le groupe WhatsApp, indiquez votre numéro WhatsApp ou cochez « même numéro ».'
-    expect(within(summary()).getByText(message)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Numéro WhatsApp/)).toHaveAccessibleDescription(expect.stringContaining(message))
 
-    // « Même numéro » masque le champ et lève l'erreur.
-    await user.click(screen.getByRole('checkbox', { name: /Mon numéro WhatsApp est celui saisi à l'accueil/ }))
-    expect(screen.queryByLabelText(/Numéro WhatsApp/)).not.toBeInTheDocument()
-    await waitFor(() => expect(within(summary()).queryByText(message)).not.toBeInTheDocument())
+    const onChoice =
+      'Pour rejoindre le groupe WhatsApp, un numéro WhatsApp est nécessaire : ' +
+      'choisissez un numéro ci-dessus, ou ne demandez pas à rejoindre le groupe.'
+    const region = await screen.findByRole('region', { name: /à corriger/ })
+    expect(within(region).getByText(onChoice)).toBeInTheDocument()
+    expect(none).toHaveAttribute('aria-invalid', 'true')
+    expect(none).toHaveAccessibleDescription(expect.stringContaining(onChoice))
+    // Le résumé renvoie sur l'option cochée, pas sur un champ masqué.
+    await user.click(within(region).getByRole('link', { name: onChoice }))
+    expect(none).toHaveFocus()
+
+    // « Un autre numéro » lève l'erreur du groupe et la reporte sur le champ numéro.
+    await user.click(screen.getByRole('radio', { name: "J'utilise un autre numéro WhatsApp" }))
+    const onNumber = 'Pour rejoindre le groupe WhatsApp, indiquez votre numéro WhatsApp.'
+    await waitFor(() => expect(within(summary()).getByText(onNumber)).toBeInTheDocument())
+    expect(within(summary()).queryByText(onChoice)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/Numéro WhatsApp/)).toHaveAccessibleDescription(expect.stringContaining(onNumber))
+
+    await user.type(screen.getByLabelText(/Numéro WhatsApp/), '05 11 22 33 44')
+    await waitFor(() => expect(within(summary()).queryByText(onNumber)).not.toBeInTheDocument())
   })
 
   it('le consentement est obligatoire et renvoie vers la mention d’information', async () => {
@@ -116,6 +155,7 @@ describe('Formulaire de la 1re visite', () => {
     await user.click(screen.getByRole('radio', { name: 'Invité(e) par un membre' }))
     await user.type(screen.getByLabelText('Nom de la personne qui vous a invité(e)'), 'Koffi Adjoua')
     await user.selectOptions(await screen.findByRole('combobox', { name: /Sa famille/ }), '4')
+    await user.click(screen.getByRole('radio', { name: "J'utilise un autre numéro WhatsApp" }))
     await user.selectOptions(screen.getByLabelText('Pays du numéro WhatsApp'), 'FR')
     await user.type(screen.getByLabelText(/Numéro WhatsApp/), '06 12 34 56 78')
     await user.click(screen.getByRole('checkbox', { name: /rejoindre le groupe WhatsApp/ }))
@@ -146,13 +186,13 @@ describe('Formulaire de la 1re visite', () => {
     })
   })
 
-  it('« même numéro » envoie whatsapp = null et whatsapp_same_as_phone = true', async () => {
+  it('« le numéro de l’accueil » envoie whatsapp = null et whatsapp_same_as_phone = true', async () => {
     const user = userEvent.setup({ delay: null })
     api.on('POST', '/api/public/visits', visitReply(1))
     renderPublic('/visite/1')
     await fillIdentity(user)
     await user.click(screen.getByRole('radio', { name: 'Réseaux sociaux' }))
-    await user.click(screen.getByRole('checkbox', { name: /Mon numéro WhatsApp est celui saisi/ }))
+    await user.click(screen.getByRole('radio', { name: /Mon numéro WhatsApp est celui saisi/ }))
     await user.click(screen.getByRole('checkbox', { name: /rejoindre le groupe WhatsApp/ }))
     await user.click(screen.getByRole('checkbox', { name: /J'accepte/ }))
     await submit(user)
@@ -166,6 +206,26 @@ describe('Formulaire de la 1re visite', () => {
       wants_whatsapp_group: true,
     })
   })
+
+  it.each(["J'utilise un autre numéro WhatsApp", "Je n'ai pas de WhatsApp"])(
+    '« %s » sans numéro saisi n’enregistre aucun WhatsApp',
+    async (choice) => {
+      const user = userEvent.setup({ delay: null })
+      api.on('POST', '/api/public/visits', visitReply(1))
+      renderPublic('/visite/1')
+      await fillIdentity(user)
+      await user.click(screen.getByRole('radio', { name: 'Bouche-à-oreille' }))
+      await user.click(screen.getByRole('radio', { name: choice }))
+      await user.click(screen.getByRole('checkbox', { name: /J'accepte/ }))
+      await submit(user)
+      await heading(/Bienvenue parmi nous/)
+      expect(api.callsTo('POST', '/api/public/visits')[0].body?.answers).toMatchObject({
+        whatsapp: null,
+        whatsapp_same_as_phone: false,
+        wants_whatsapp_group: false,
+      })
+    },
+  )
 
   it('rattache les erreurs 422 du serveur aux champs (clés answers.*)', async () => {
     const user = userEvent.setup({ delay: null })

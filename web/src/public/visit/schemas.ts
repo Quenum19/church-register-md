@@ -17,6 +17,14 @@ function oneOf(values: readonly string[], message: string) {
   return z.string().check(z.refine((v) => values.includes(v), message))
 }
 
+/**
+ * Choix WhatsApp de la visite 1 (formulaire uniquement : le contrat ne connaît que
+ * `whatsapp_same_as_phone` + `whatsapp`). « same » = numéro de l'accueil,
+ * « other » = un autre numéro saisi, « none » = pas de WhatsApp.
+ */
+export const WHATSAPP_CHOICES = ['same', 'other', 'none'] as const
+export type WhatsappChoice = (typeof WHATSAPP_CHOICES)[number]
+
 type AddIssue = (path: string, message: string) => void
 
 /** Texte requis sous condition (précision « Autre », nom de l'invitant…). */
@@ -41,7 +49,7 @@ export const visit1Schema = z
     source_other: z.string(),
     invited_by: z.string(),
     inviter_family_id: z.string(),
-    whatsapp_same_as_phone: z.boolean(),
+    whatsapp_choice: z.enum(WHATSAPP_CHOICES),
     whatsapp_country: z.enum(COUNTRY_CODES),
     whatsapp_number: z.string(),
     wants_whatsapp_group: z.boolean(),
@@ -72,16 +80,20 @@ export const visit1Schema = z
           add,
         )
       }
-      if (!v.whatsapp_same_as_phone) {
+      // « same » : rien à valider, le serveur reprend le numéro identifié.
+      if (v.whatsapp_choice === 'other') {
         if (v.whatsapp_number.trim()) {
           const error = validatePhone(v.whatsapp_number, v.whatsapp_country, 'whatsapp')
           if (error) add('whatsapp_number', error)
         } else if (v.wants_whatsapp_group) {
-          add(
-            'whatsapp_number',
-            'Pour rejoindre le groupe WhatsApp, indiquez votre numéro WhatsApp ou cochez « même numéro ».',
-          )
+          add('whatsapp_number', 'Pour rejoindre le groupe WhatsApp, indiquez votre numéro WhatsApp.')
         }
+      } else if (v.whatsapp_choice === 'none' && v.wants_whatsapp_group) {
+        add(
+          'whatsapp_choice',
+          'Pour rejoindre le groupe WhatsApp, un numéro WhatsApp est nécessaire : choisissez un numéro ci-dessus, ' +
+            'ou ne demandez pas à rejoindre le groupe.',
+        )
       }
     }),
   )

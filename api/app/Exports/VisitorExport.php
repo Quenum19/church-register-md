@@ -9,6 +9,7 @@ use App\Models\Visit;
 use App\Models\Visitor;
 use App\Queries\VisitorListQuery;
 use App\Services\PhoneNumberService;
+use Carbon\CarbonImmutable;
 use Generator;
 
 /**
@@ -41,7 +42,53 @@ class VisitorExport
     /** Index de la colonne numérique « Nombre de visites ». */
     public const VISIT_COUNT_COLUMN = 6;
 
+    /** Mention de confidentialité en pied de document (PDF et Excel). */
+    public const CONFIDENTIALITY = 'Document interne — contient des données personnelles';
+
+    /** Sous-titre du document, sous le nom de l'église. */
+    public const SUBTITLE = 'Registre des visiteurs';
+
     public function __construct(private readonly int $chunkSize = self::CHUNK_SIZE) {}
+
+    /**
+     * Filtres appliqués, en toutes lettres, pour l'en-tête des exports PDF et Excel.
+     *
+     * Le TEXTE RECHERCHÉ n'est JAMAIS reproduit (il peut contenir un nom ou un numéro de
+     * téléphone, et le document est destiné à circuler) : seule la mention qu'une recherche
+     * était active figure, exactement comme dans le journal d'audit des exports
+     * (VisitorListQuery::auditFilters()).
+     *
+     * @return list<string>
+     */
+    public function describeFilters(VisitorListQuery $query): array
+    {
+        $filters = [];
+
+        if ($query->status === VisitorListQuery::STATUS_NON_MEMBER) {
+            $filters[] = 'Statut : tous sauf les membres';
+        } elseif ($query->status !== null) {
+            $filters[] = 'Statut : '.(VisitorStatus::tryFrom($query->status)?->label() ?? $query->status);
+        }
+
+        if ($query->familyId !== null) {
+            $name = Family::query()->whereKey($query->familyId)->value('name');
+            $filters[] = "Famille d'accueil : ".(is_string($name) ? $name : '#'.$query->familyId);
+        }
+
+        if ($query->from !== null && $query->to !== null) {
+            $filters[] = '1re visite du '.$this->day($query->from).' au '.$this->day($query->to);
+        } elseif ($query->from !== null) {
+            $filters[] = '1re visite à partir du '.$this->day($query->from);
+        } elseif ($query->to !== null) {
+            $filters[] = "1re visite jusqu'au ".$this->day($query->to);
+        }
+
+        if ($query->search !== null) {
+            $filters[] = 'Recherche : active (texte non reproduit)';
+        }
+
+        return $filters;
+    }
 
     /**
      * Nombre de lignes de l'export (même requête que rows()).
@@ -115,6 +162,14 @@ class VisitorExport
         return $visitor->source === Source::Autre && $visitor->source_other !== null && $visitor->source_other !== ''
             ? $label.' : '.$visitor->source_other
             : $label;
+    }
+
+    /**
+     * Date de filtre (« YYYY-MM-DD » validé par VisitorListQuery) => « JJ/MM/AAAA ».
+     */
+    private function day(string $value): string
+    {
+        return CarbonImmutable::parse($value)->format('d/m/Y');
     }
 
     /**

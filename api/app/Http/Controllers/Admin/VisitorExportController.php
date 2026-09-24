@@ -43,9 +43,10 @@ class VisitorExportController extends Controller
     public function xlsx(VisitorExportRequest $request, XlsxVisitorExport $xlsx): StreamedResponse
     {
         $query = $request->listQuery();
-        $this->log('xlsx', $query, $this->export->count($query));
+        $count = $this->export->count($query);
+        $this->log('xlsx', $query, $count);
 
-        return $xlsx->download($query, $this->filename('xlsx'));
+        return $xlsx->download($query, $count, $this->filename('xlsx'));
     }
 
     /**

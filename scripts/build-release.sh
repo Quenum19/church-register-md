@@ -164,7 +164,8 @@ printf '%s\n' "$REVISION" > "$APP/REVISION"
 
 # --- 5. Contrôles de l'arborescence ----------------------------------------------------
 log "Contrôles de la release"
-for required in artisan composer.json vendor/autoload.php bootstrap/app.php public/index.php public/.htaccess public/spa.html REVISION; do
+# resources/images/logo.png : logo des exports PDF, propre à api/ (jamais repris de web/).
+for required in artisan composer.json vendor/autoload.php bootstrap/app.php public/index.php public/.htaccess public/spa.html resources/images/logo.png REVISION; do
   [[ -e "$APP/$required" ]] || die "fichier attendu absent de la release : $required"
 done
 [[ -d "$APP/public/assets" ]] || die "public/assets/ absent : le build du SPA n'a rien produit ?"

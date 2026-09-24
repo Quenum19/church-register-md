@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Controller } from 'react-hook-form'
 import { Link } from 'react-router'
 import type { FamilyRef, Visit1Answers } from '../../shared/api-types'
@@ -10,7 +10,7 @@ import { cleanPhoneInput, formatPhoneWithDial, phoneForApi, phoneHint } from '..
 import { focusRing, hintBase, labelBase } from '../ui/classes'
 import { CountrySelect, SelectField, TextField } from '../ui/Field'
 import { Checkbox, ChoiceGroup, ChoiceOption, TextArea } from './FormFields'
-import { visit1Schema, type Visit1Values } from './schemas'
+import { visit1Schema, type Visit1Values, type WhatsappChoice } from './schemas'
 import { useVisitForm } from './useVisitForm'
 import { VisitFormShell } from './VisitFormParts'
 
@@ -22,7 +22,7 @@ const FIELD_ORDER = [
   'invited_by',
   'inviter_family_id',
   'source_other',
-  'whatsapp_same_as_phone',
+  'whatsapp_choice',
   'whatsapp_country',
   'whatsapp_number',
   'wants_whatsapp_group',
@@ -35,9 +35,9 @@ const resolver = zodResolver(visit1Schema)
 
 const DEPENDENTS = {
   source: ['invited_by', 'inviter_family_id', 'source_other'],
-  whatsapp_same_as_phone: ['whatsapp_number'],
+  whatsapp_choice: ['whatsapp_number'],
   whatsapp_country: ['whatsapp_number'],
-  wants_whatsapp_group: ['whatsapp_number'],
+  wants_whatsapp_group: ['whatsapp_choice', 'whatsapp_number'],
 } satisfies Partial<Record<keyof Visit1Values, (keyof Visit1Values)[]>>
 
 function toRequest(v: Visit1Values) {
@@ -51,11 +51,13 @@ function toRequest(v: Visit1Values) {
     source_other: v.source === 'autre' ? v.source_other.trim() : null,
     invited_by: invited ? v.invited_by.trim() : null,
     inviter_family_id: invited && v.inviter_family_id ? Number(v.inviter_family_id) : null,
+    // Contrat §2 inchangé : « autre numéro » renseigne `whatsapp`, « numéro de l'accueil »
+    // pose `whatsapp_same_as_phone`, « pas de WhatsApp » n'envoie ni l'un ni l'autre.
     whatsapp:
-      !v.whatsapp_same_as_phone && whatsappNumber
+      v.whatsapp_choice === 'other' && whatsappNumber
         ? { country: v.whatsapp_country, number: phoneForApi(whatsappNumber, v.whatsapp_country) }
         : null,
-    whatsapp_same_as_phone: v.whatsapp_same_as_phone,
+    whatsapp_same_as_phone: v.whatsapp_choice === 'same',
     wants_whatsapp_group: v.wants_whatsapp_group,
   }
   return { answers, consent: v.consent, name: answers.full_name }
@@ -74,7 +76,8 @@ export default function Visit1Page() {
     source_other: '',
     invited_by: '',
     inviter_family_id: '',
-    whatsapp_same_as_phone: false,
+    // Le numéro de l'accueil est de loin le cas le plus fréquent : présélectionné quand il existe.
+    whatsapp_choice: identified ? 'same' : 'other',
     whatsapp_country: identifiedCountry,
     whatsapp_number: '',
     wants_whatsapp_group: false,
@@ -104,11 +107,15 @@ export default function Visit1Page() {
     dependents: DEPENDENTS,
     targetOf: (field, values) => {
       if (field === 'source') return `source-${values.source || SOURCES[0]}`
+      if (field === 'whatsapp_choice') return `whatsapp_choice-${values.whatsapp_choice}`
       return field
     },
     aliasOf: (key, values) => {
+      // Le serveur ne connaît que `whatsapp` / `whatsapp_same_as_phone` : sans champ
+      // « numéro » à l'écran, l'erreur se rattache au groupe de choix.
+      if (key === 'whatsapp_same_as_phone') return 'whatsapp_choice'
       if (key === 'whatsapp' || key.startsWith('whatsapp.')) {
-        if (values.whatsapp_same_as_phone) return 'whatsapp_same_as_phone'
+        if (values.whatsapp_choice !== 'other') return 'whatsapp_choice'
         return key === 'whatsapp.country' ? 'whatsapp_country' : 'whatsapp_number'
       }
       return key
@@ -118,9 +125,28 @@ export default function Visit1Page() {
   const { form, errorOf } = visit
   const { register, control, watch, setValue, getValues } = form
   const source = watch('source')
-  const sameAsPhone = watch('whatsapp_same_as_phone')
+  const whatsappChoice = watch('whatsapp_choice')
   const whatsappCountry = watch('whatsapp_country')
   const whatsappDial = findCountry(whatsappCountry).dial
+  const whatsappError = errorOf('whatsapp_choice')
+
+  const whatsappOptions: { value: WhatsappChoice; label: ReactNode }[] = [
+    ...(identified
+      ? [
+          {
+            value: 'same' as const,
+            label: (
+              <>
+                Mon numéro WhatsApp est celui saisi à l'accueil :{' '}
+                <strong className="whitespace-nowrap">{formatPhoneWithDial(identified.phone, identified.country)}</strong>
+              </>
+            ),
+          },
+        ]
+      : []),
+    { value: 'other', label: "J'utilise un autre numéro WhatsApp" },
+    { value: 'none', label: "Je n'ai pas de WhatsApp" },
+  ]
 
   return (
     <VisitFormShell
@@ -234,21 +260,25 @@ export default function Visit1Page() {
             entre elle et le texte d'aide, dont l'espacement est donc porté par les deux éléments. */}
         <legend className={`${labelBase} mb-2 text-lg`}>WhatsApp</legend>
         <p className={`${hintBase} mt-1`}>Facultatif, sauf pour rejoindre le groupe WhatsApp de l'Église.</p>
-        {identified && (
-          <Checkbox
-            id="whatsapp_same_as_phone"
-            label={
-              <>
-                Mon numéro WhatsApp est celui saisi à l'accueil :{' '}
-                <strong className="whitespace-nowrap">{formatPhoneWithDial(identified.phone, identified.country)}</strong>
-              </>
-            }
-            error={errorOf('whatsapp_same_as_phone')}
-            {...register('whatsapp_same_as_phone')}
-          />
-        )}
-        {!sameAsPhone && (
-          <>
+        <ChoiceGroup id="whatsapp_choice" legend="Votre numéro WhatsApp" error={whatsappError}>
+          {whatsappOptions.map((option) => (
+            <ChoiceOption
+              key={option.value}
+              id={`whatsapp_choice-${option.value}`}
+              type="radio"
+              value={option.value}
+              label={option.label}
+              invalid={Boolean(whatsappError)}
+              aria-describedby={whatsappError ? 'whatsapp_choice-error' : undefined}
+              {...register('whatsapp_choice')}
+            />
+          ))}
+        </ChoiceGroup>
+
+        {/* Révélé par « J'utilise un autre numéro » : placé juste après le groupe, donc lu
+            dans la foulée par les lecteurs d'écran, comme les précisions de la question « source ». */}
+        {whatsappChoice === 'other' && (
+          <div className="flex flex-col gap-4 border-l-4 border-church-gold pl-4">
             <CountrySelect
               id="whatsapp_country"
               label="Pays du numéro WhatsApp"
@@ -280,7 +310,7 @@ export default function Visit1Page() {
                 />
               )}
             />
-          </>
+          </div>
         )}
         <Checkbox
           id="wants_whatsapp_group"

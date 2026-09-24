@@ -25,8 +25,8 @@ possible en faisant essayer quelqu'un qui n'a jamais vu l'application.
 | A4 | Envoyer le formulaire **vide** | Résumé d'erreurs en haut, chaque champ signalé, focus placé sur le résumé |
 | A5 | Source « Invité(e) par un membre » | Le nom de l'invitant devient obligatoire, la famille est proposée |
 | A6 | Source « Autre » | Un champ de précision apparaît et devient obligatoire |
-| A7 | Cocher « rejoindre le groupe WhatsApp » sans numéro | Message clair exigeant un numéro |
-| A8 | Cocher « même numéro que celui saisi » | Le champ WhatsApp se remplit tout seul |
+| A7 | Choisir « Je n'ai pas de WhatsApp » **et** cocher « rejoindre le groupe » | Message clair expliquant qu'un numéro est nécessaire |
+| A8 | Choisir « J'utilise un autre numéro WhatsApp » | Le pays et le champ numéro apparaissent, et le numéro saisi est bien celui enregistré |
 | A9 | Ouvrir « Vos données et vos droits » puis revenir | **La saisie est conservée** |
 | A10 | Ne pas cocher le consentement | L'envoi est refusé |
 | A11 | Envoyer | Page de remerciement, « Votre 1re visite est enregistrée », famille du mois affichée |
