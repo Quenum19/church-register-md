@@ -260,6 +260,10 @@ it('déduplique les raisons et ignore la précision sans « autres »', function
 it('ignore tout champ de profil aux étapes 2 et 3 (nom non modifiable)', function (): void {
     $token = $this->secondStepToken();
 
+    // Commune fixée : la fabrique en tire une au hasard et pouvait tomber sur « Yopougon »,
+    // celle que la requête tente d'injecter — le test échouait alors sans aucune régression.
+    Visitor::query()->sole()->forceFill(['commune' => 'Cocody'])->save();
+
     $this->postVisit($token, [
         ...$this->visit2Answers(),
         'full_name' => 'Nom Usurpé',
@@ -271,7 +275,7 @@ it('ignore tout champ de profil aux étapes 2 et 3 (nom non modifiable)', functi
     $visitor = Visitor::query()->sole();
 
     expect($visitor->full_name)->toBe('Aya Kouassi')
-        ->and($visitor->commune)->not->toBe('Yopougon')
+        ->and($visitor->commune)->toBe('Cocody')
         ->and($visitor->whatsapp)->toBeNull()
         ->and($visitor->phone)->toBe($this->e164)
         ->and(Visit::query()->where('visit_number', 2)->sole()->answers)
