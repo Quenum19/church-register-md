@@ -6,7 +6,13 @@ import { PDF_EXPORT_MAX_ROWS } from './visitorFilters'
 // Messages explicites pour les codes métier du contrat (le message serveur sert de repli).
 // Les erreurs 5xx arrivent avec un message générique (voir shared/http.ts) : seul le code
 // permet alors d'expliquer la cause (ex. 503 `mail_failed`).
-const CODE_MESSAGES: Partial<Record<ApiErrorCodeName, string>> = {
+/**
+ * Codes métier connus du dashboard : ceux du contrat (`ApiErrorCodeName`, partagé avec
+ * le parcours public) et ceux ajoutés depuis sa dernière révision.
+ */
+export type AdminErrorCode = ApiErrorCodeName | 'event_has_visits'
+
+const CODE_MESSAGES: Partial<Record<AdminErrorCode, string>> = {
   bad_request: 'Requête invalide. Rechargez la page puis réessayez.',
   forbidden: "Vous n'avez pas les droits nécessaires pour cette action.",
   not_found: 'Élément introuvable. Il a peut-être été supprimé.',
@@ -24,6 +30,9 @@ const CODE_MESSAGES: Partial<Record<ApiErrorCodeName, string>> = {
   already_member: 'Ce visiteur est déjà membre.',
   not_member: "Ce visiteur n'est pas membre : la conversion a peut-être déjà été annulée. Rechargez la fiche.",
   too_many_rows: `Plus de ${formatNumber(PDF_EXPORT_MAX_ROWS)} lignes : l'export PDF n'est pas disponible. Utilisez CSV ou Excel, ou affinez les filtres.`,
+  // Événements
+  event_has_visits:
+    'Des inscriptions sont déjà rattachées à cet événement : il ne peut pas être supprimé. Désactivez-le plutôt — son lien cessera d’accepter de nouvelles inscriptions et l’historique sera conservé.',
   // Rapports et e-mails
   no_recipients:
     "Aucun destinataire actif n'est configuré pour ce rapport. Ajoutez-en dans Paramètres › Destinataires des rapports.",
@@ -36,12 +45,12 @@ const CODE_MESSAGES: Partial<Record<ApiErrorCodeName, string>> = {
 
 export function errorMessage(error: unknown, overrides: Record<string, string> = {}): string {
   if (error instanceof ApiError) {
-    return overrides[error.code] ?? CODE_MESSAGES[error.code as ApiErrorCodeName] ?? error.message
+    return overrides[error.code] ?? CODE_MESSAGES[error.code as AdminErrorCode] ?? error.message
   }
   return 'Une erreur inattendue est survenue. Merci de réessayer.'
 }
 
-export function isApiError(error: unknown, status?: number, code?: ApiErrorCodeName): error is ApiError {
+export function isApiError(error: unknown, status?: number, code?: AdminErrorCode): error is ApiError {
   if (!(error instanceof ApiError)) return false
   if (status !== undefined && error.status !== status) return false
   if (code !== undefined && error.code !== code) return false

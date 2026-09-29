@@ -2,6 +2,7 @@
 
 import type { Verse } from '../../shared/api-types'
 import type { QrMatrix } from '../hooks/useQrMatrix'
+import { capitalize, formatLongDay, parseDate } from './format'
 
 const WIDTH = 1240 // A4 à 150 dpi
 const HEIGHT = 1754
@@ -14,9 +15,34 @@ const TEXT = '#374151'
 
 export interface PosterContent {
   churchName: string
+  /** Affiche d'un culte spécial : son nom remplace « Bienvenue parmi nous ». */
+  eventName?: string | null
+  /** Date du culte (`YYYY-MM-DD`), affichée sous son nom. */
+  eventDate?: string | null
   verse: Verse | null
   url: string
   matrix: QrMatrix
+}
+
+export type PosterHeading = Pick<PosterContent, 'eventName' | 'eventDate'>
+
+export interface PosterTexts {
+  eventName: string | null
+  subtitle: string
+  headline: string
+  instruction: string
+}
+
+/** Textes de l'affiche, partagés par l'aperçu à l'écran et par l'export PNG. */
+export function posterTexts({ eventName, eventDate }: PosterHeading): PosterTexts {
+  const name = eventName?.trim() || null
+  const date = parseDate(eventDate)
+  return {
+    eventName: name,
+    subtitle: name ? (date ? capitalize(formatLongDay(date)) : 'Culte spécial') : 'Bienvenue parmi nous',
+    headline: name ? 'Scannez pour vous inscrire' : 'Scannez pour enregistrer votre visite',
+    instruction: 'Ouvrez l’appareil photo de votre téléphone et visez le code.',
+  }
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -84,24 +110,41 @@ export async function renderPosterPng(content: PosterContent): Promise<Blob> {
   header.addColorStop(1, PURPLE_DK)
   ctx.fillStyle = header
   ctx.fillRect(0, 24, WIDTH, 400)
+  // Nom de l'église (plus compact quand un nom d'événement doit tenir en dessous),
+  // filet doré, puis nom de l'événement et sa date — ou « Bienvenue parmi nous ».
+  const texts = posterTexts(content)
+  const nameFont = texts.eventName
+    ? '700 44px "Playfair Display", Georgia, serif'
+    : '700 64px "Playfair Display", Georgia, serif'
+  const nameLineHeight = texts.eventName ? 56 : 80
+  ctx.font = nameFont
+  const nameLines = wrapText(ctx, content.churchName, WIDTH - 200).slice(0, texts.eventName ? 2 : 3)
+  ctx.font = '700 60px "Playfair Display", Georgia, serif'
+  const eventLines = texts.eventName ? wrapText(ctx, texts.eventName, WIDTH - 160).slice(0, 2) : []
+  const blockHeight = nameLines.length * nameLineHeight + 32 + eventLines.length * 72 + 44
+
   ctx.fillStyle = '#ffffff'
-  ctx.font = '700 64px "Playfair Display", Georgia, serif'
-  const nameLines = wrapText(ctx, content.churchName, WIDTH - 200).slice(0, 3)
-  const nameHeight = nameLines.length * 80
-  let y = drawLines(ctx, nameLines, 24 + (400 - nameHeight - 60) / 2, 80)
+  ctx.font = nameFont
+  let y = drawLines(ctx, nameLines, 24 + (400 - blockHeight) / 2, nameLineHeight)
   ctx.fillStyle = GOLD
   ctx.fillRect(WIDTH / 2 - 80, y + 14, 160, 4)
+  y += 32
+  if (eventLines.length > 0) {
+    ctx.fillStyle = GOLD_LT
+    ctx.font = '700 60px "Playfair Display", Georgia, serif'
+    y = drawLines(ctx, eventLines, y, 72)
+  }
   ctx.fillStyle = '#f3e8ff'
   ctx.font = 'italic 400 32px "Lato", Arial, sans-serif'
-  ctx.fillText('Bienvenue parmi nous', WIDTH / 2, y + 34)
+  ctx.fillText(texts.subtitle, WIDTH / 2, y + 4)
 
   // Consigne
   ctx.fillStyle = PURPLE_DK
   ctx.font = '700 48px "Lato", Arial, sans-serif'
-  ctx.fillText('Scannez pour enregistrer votre visite', WIDTH / 2, 490)
+  ctx.fillText(texts.headline, WIDTH / 2, 490)
   ctx.fillStyle = TEXT
   ctx.font = '400 30px "Lato", Arial, sans-serif'
-  ctx.fillText('Ouvrez l’appareil photo de votre téléphone et visez le code.', WIDTH / 2, 556)
+  ctx.fillText(texts.instruction, WIDTH / 2, 556)
 
   // QR code
   const qrSize = 640

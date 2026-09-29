@@ -1,5 +1,5 @@
-/* Impression de l'affiche QR code (window.print) : seule l'affiche est imprimée.
-   Actif uniquement quand la page QR code est affichée (attribut posé sur <html>). */
+/* Impression d'une affiche QR code (window.print) : seule l'affiche est imprimée.
+   Actif uniquement quand une affiche est à l'écran (attribut posé sur <html> par <PosterPreview>). */
 @page {
   size: A4 portrait;
   margin: 12mm;

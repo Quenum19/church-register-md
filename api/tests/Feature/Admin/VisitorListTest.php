@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Event;
 use App\Models\User;
 use App\Models\Visitor;
 use Illuminate\Support\Facades\DB;
@@ -178,6 +179,38 @@ it('filtre par famille : au moins une visite accueillie par cette famille', func
         ->and(($this->ids)('family_id='.$this->families['Sagesse']->id.'&sort=created_at'))->toBe([$forceSecond->id, $sagesseOnly->id])
         ->and(($this->ids)('family_id='.$this->families['Gloire']->id))->toBe([]);
 });
+
+it('filtre par événement : au moins une visite rattachée à cet événement', function (): void {
+    $culte = Event::factory()->create(['slug' => 'culte-4-octobre']);
+    $evangelisation = Event::factory()->create(['slug' => 'evangelisation']);
+
+    // Venue au culte spécial (1re visite), revenue au culte ordinaire.
+    $fromCulte = AdminFixtures::visitor(['2026-09-06', '2026-09-13'], ['full_name' => 'Awa Koné']);
+    $fromCulte->visits()->where('visit_number', 1)->update(['event_id' => $culte->id]);
+
+    // Venue à l'évangélisation.
+    $fromEvangelisation = AdminFixtures::visitor(['2026-09-07'], ['full_name' => 'Yao Traoré']);
+    $fromEvangelisation->visits()->update(['event_id' => $evangelisation->id]);
+
+    // Parcours entièrement ordinaire.
+    AdminFixtures::visitor(['2026-09-08'], ['full_name' => 'Zara Diallo']);
+
+    expect(($this->ids)('event_id='.$culte->id))->toBe([$fromCulte->id])
+        ->and(($this->ids)('event_id='.$evangelisation->id))->toBe([$fromEvangelisation->id])
+        // Se combine en ET avec les autres filtres.
+        ->and(($this->ids)('event_id='.$culte->id.'&status=recurrent'))->toBe([$fromCulte->id])
+        ->and(($this->ids)('event_id='.$culte->id.'&status=prospect'))->toBe([])
+        ->and(($this->ids)('event_id='.$culte->id.'&search=awa'))->toBe([$fromCulte->id])
+        ->and(($this->ids)('event_id='.$culte->id.'&search=yao'))->toBe([])
+        ->and(($this->ids)('event_id='.$culte->id.'&family_id='.$this->families['Force']->id))->toBe([$fromCulte->id])
+        ->and(($this->ids)('event_id='.$culte->id.'&from=2026-09-07'))->toBe([]);
+});
+
+it('rejette un event_id inconnu ou non numérique (422)', function (string $value): void {
+    $this->getJson('/api/admin/visitors?event_id='.$value)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['event_id']);
+})->with(['999999', 'abc', '0', '-1']);
 
 it('filtre sur la date de 1re visite (bornes incluses)', function (): void {
     $august = AdminFixtures::visitor(['2026-08-31', '2026-09-06']);

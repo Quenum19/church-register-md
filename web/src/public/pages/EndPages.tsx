@@ -59,7 +59,7 @@ export function ThanksPage() {
   if (!result) return <Navigate to="/" replace />
 
   const message = THANKS[result.visitNumber]
-  // Le nom affiché est uniquement celui saisi dans ce navigateur à la 1re visite.
+  // Le nom affiché est uniquement celui saisi dans ce navigateur à la première visite.
   const title = result.visitNumber === 1 && result.name ? `Bienvenue parmi nous, ${result.name} !` : message.title
   return (
     <EndLayout title={title} icon={message.icon} buttonLabel="Terminer">

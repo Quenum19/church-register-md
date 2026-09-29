@@ -24,7 +24,7 @@ interface UseVisitFormOptions<T extends FieldValues> {
   defaults: T
   /** Ordre d'affichage des erreurs dans le résumé. */
   fieldOrder: Path<T>[]
-  /** id de l'élément à focaliser pour un champ (1re option d'un groupe radio…). */
+  /** id de l'élément à focaliser pour un champ (première option d'un groupe radio…). */
   targetOf?: (field: Path<T>, values: T) => string
   /**
    * Champs conditionnels à revalider quand un champ change (après un 1er envoi) :

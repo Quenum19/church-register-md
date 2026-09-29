@@ -21,7 +21,7 @@ beforeEach(() => {
 })
 
 async function answerVisit2(user: UserEvent) {
-  await heading('Votre 2e visite')
+  await heading('Votre deuxième visite')
   await user.click(screen.getByRole('checkbox', { name: "L'enseignement de la Parole" }))
   await user.click(screen.getByRole('checkbox', { name: "L'accueil reçu" }))
   await user.click(screen.getByRole('button', { name: 'Enregistrer ma visite' }))
@@ -134,7 +134,7 @@ describe('Envoi d’une visite', () => {
       .on('POST', '/api/public/identify', identifyReply(3, 'jeton-3'))
     renderPublic('/visite/2')
     await answerVisit2(user)
-    await heading('Votre 3e visite')
+    await heading('Votre troisième visite')
     expect(currentPath()).toBe('/visite/3')
     expect(api.callsTo('POST', '/api/public/visits')).toHaveLength(1)
   })
@@ -165,12 +165,12 @@ describe('Envoi d’une visite', () => {
     expect(screen.getByRole('checkbox', { name: "L'enseignement de la Parole" })).toBeChecked()
   })
 
-  it('la 3e visite exige une précision pour « Autre raison » et termine le parcours', async () => {
+  it('la troisième visite exige une précision pour « Autre raison » et termine le parcours', async () => {
     const user = userEvent.setup({ delay: null })
     seedIdentified(3)
     api.on('POST', '/api/public/visits', visitReply(3, 201, { id: 4, name: 'Force' }))
     renderPublic('/visite/3')
-    await heading('Votre 3e visite')
+    await heading('Votre troisième visite')
     await user.click(screen.getByRole('radio', { name: 'Autre raison' }))
     await user.click(screen.getByRole('button', { name: 'Enregistrer ma visite' }))
     expect(await screen.findByRole('region', { name: 'Un point est à corriger :' })).toHaveTextContent(

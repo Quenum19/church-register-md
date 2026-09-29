@@ -1,5 +1,6 @@
 import type {
   Ability,
+  ChurchEvent,
   MeResponse,
   Paginated,
   Stats,
@@ -7,10 +8,11 @@ import type {
   VisitorDetail,
   VisitorSummary,
 } from '../../shared/api-types'
+import type { AdminAbility } from '../auth/context'
 import type { Role } from '../../shared/domain'
 import type { MockServer } from './server'
 
-const ALL: Ability[] = [
+const ALL: AdminAbility[] = [
   'visitors.view',
   'visitors.update',
   'notes.create',
@@ -24,9 +26,10 @@ const ALL: Ability[] = [
   'settings.update',
   'users.manage',
   'audit.view',
+  'events.manage',
 ]
 
-export const ABILITIES: Record<Role, Ability[]> = {
+export const ABILITIES: Record<Role, AdminAbility[]> = {
   lecteur: ['visitors.view'],
   moderateur: ['visitors.view', 'visitors.update', 'notes.create'],
   super_admin: ALL,
@@ -48,7 +51,8 @@ export function makeUser(overrides: Partial<User> = {}): User {
 }
 
 export function makeMe(role: Role = 'super_admin'): MeResponse {
-  return { user: makeUser({ role }), abilities: ABILITIES[role] }
+  // `events.manage` n'est pas encore déclarée dans `Ability` (shared/) : le serveur l'envoie déjà.
+  return { user: makeUser({ role }), abilities: ABILITIES[role] as Ability[] }
 }
 
 export function makeStats(overrides: Partial<Stats> = {}): Stats {
@@ -110,16 +114,40 @@ export function makeVisitorDetail(overrides: Partial<VisitorDetail> = {}): Visit
   }
 }
 
+export function makeEvent(overrides: Partial<ChurchEvent> = {}): ChurchEvent {
+  return {
+    id: 7,
+    name: 'Évangélisation du 4 octobre',
+    slug: 'evangelisation-4-octobre',
+    event_date: '2026-10-04',
+    active: true,
+    url: 'https://registre.newinechurch.org/e/evangelisation-4-octobre',
+    visits_count: 0,
+    visitors_count: 0,
+    created_at: '2026-09-20T08:00:00+00:00',
+    ...overrides,
+  }
+}
+
 export function paginated<T>(data: T[], meta: Partial<Paginated<T>['meta']> = {}): Paginated<T> {
   return { data, meta: { current_page: 1, last_page: 1, per_page: 20, total: data.length, ...meta } }
 }
 
-/** Session authentifiée + données communes à la mise en page (famille du mois, familles). */
+/** Session authentifiée + données communes à la mise en page (famille du mois, familles, événements). */
 export function withSession(server: MockServer, role: Role = 'super_admin') {
   return server
     .on('GET', '/api/auth/me', { body: makeMe(role) })
     .on('GET', '/sanctum/csrf-cookie', { status: 204 })
     .on('GET', '/api/admin/stats', { body: makeStats() })
+    .on('GET', '/api/admin/events', { body: { data: [makeEvent()] } })
+    .on('GET', '/api/admin/settings', {
+      body: {
+        church_name: 'Église La Maison de la Destinée',
+        public_url: 'https://registre.newinechurch.org',
+        verse: { ref: 'Psaume 122:1', text: 'Allons à la maison de l’Éternel !', preset: 1 },
+        verse_presets: [],
+      },
+    })
     .on('GET', '/api/admin/families', {
       body: {
         data: [

@@ -4,6 +4,7 @@ require_once __DIR__.'/../Auth/helpers.php';
 
 use App\Enums\Role;
 use App\Models\AuditLog;
+use App\Models\Event;
 use App\Models\Family;
 use App\Models\FamilyRotation;
 use App\Models\Member;
@@ -114,6 +115,7 @@ it('stocke et expose tel quel l\'alias court du contrat pour subject_type', func
 })->with([
     [Visitor::class, 'visitor'],
     [Visit::class, 'visit'],
+    [Event::class, 'event'],
     [VisitorNote::class, 'note'],
     [Member::class, 'member'],
     [User::class, 'user'],
@@ -126,7 +128,7 @@ it('stocke et expose tel quel l\'alias court du contrat pour subject_type', func
 it('impose une morph map limitée aux alias du contrat (ni setting ni audit_log)', function (): void {
     expect(Relation::requiresMorphMap())->toBeTrue()
         ->and(array_keys(Relation::morphMap()))->toBe(
-            ['visitor', 'visit', 'note', 'member', 'user', 'family', 'rotation', 'recipient', 'report'],
+            ['visitor', 'visit', 'event', 'note', 'member', 'user', 'family', 'rotation', 'recipient', 'report'],
         );
 
     // « settings.updated » n'a pas de sujet : un paramètre (clé chaîne) ne peut pas en être un.

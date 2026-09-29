@@ -16,6 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/admin/membres', label: 'Membres', icon: 'member', ability: 'visitors.view' },
   { to: '/admin/rapports', label: 'Rapports', icon: 'chart', ability: 'visitors.view' },
   { to: '/admin/qrcode', label: 'QR code', icon: 'qr', ability: 'visitors.view' },
+  { to: '/admin/evenements', label: 'Événements', icon: 'calendar', ability: 'visitors.view' },
   { to: '/admin/administrateurs', label: 'Administrateurs', icon: 'shield', ability: 'users.manage' },
   { to: '/admin/journal', label: 'Journal d’audit', icon: 'list', ability: 'audit.view' },
   { to: '/admin/parametres', label: 'Paramètres', icon: 'cog' },

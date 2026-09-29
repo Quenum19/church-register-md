@@ -38,6 +38,7 @@ it('expose exactement les routes du contrat, avec leur authentification et leur 
     $expected = [
         // §2 API publique (sans session).
         'GET /api/public/config',
+        'GET /api/public/events/{slug}',
         'POST /api/public/identify',
         'POST /api/public/visits',
 
@@ -77,6 +78,10 @@ it('expose exactement les routes du contrat, avec leur authentification et leur 
         'PATCH /api/admin/report-recipients/{recipient} auth recipients.manage',
         'DELETE /api/admin/report-recipients/{recipient} auth recipients.manage',
         'POST /api/admin/report-recipients/test auth recipients.manage',
+        'GET /api/admin/events auth visitors.view',
+        'POST /api/admin/events auth events.manage',
+        'PATCH /api/admin/events/{event} auth events.manage',
+        'DELETE /api/admin/events/{event} auth events.manage',
         'GET /api/admin/families auth visitors.view',
         'GET /api/admin/rotations auth visitors.view',
         'PUT /api/admin/rotations/{year}/{month} auth rotations.manage',

@@ -32,11 +32,12 @@ class IdentificationService
     ) {}
 
     /**
+     * @param  int|null  $eventId  événement d'origine (lien dédié `/e/{slug}`), mémorisé dans le jeton
      * @return array{step: int|string, session_token: string|null, expires_in: int|null}
      *
      * @throws ApiException 429 si ce numéro a déjà obtenu 5 jetons dans l'heure
      */
-    public function identify(string $phoneE164, PhoneCountry $country): array
+    public function identify(string $phoneE164, PhoneCountry $country, ?int $eventId = null): array
     {
         $key = RateLimits::identifyNumberKey($phoneE164);
 
@@ -51,7 +52,7 @@ class IdentificationService
 
             return [
                 'step' => $step,
-                'session_token' => $this->tokens->issue($phoneE164, $country, $step),
+                'session_token' => $this->tokens->issue($phoneE164, $country, $step, $eventId),
                 'expires_in' => VisitTokenService::TTL_SECONDS,
             ];
         }

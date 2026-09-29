@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Enums\VisitorStatus;
 use App\Mail\Concerns\RendersPlainTextAlternative;
 use App\Services\PhoneNumberService;
 use App\Services\Reports\MonthlyReport;
@@ -49,17 +50,19 @@ class MonthlyReportMail extends Mailable
                 'hasFamily' => $report->family !== null,
                 'inProgress' => $report->inProgress,
                 'counts' => $report->counts,
+                // Libellés en toutes lettres, identiques à ceux du dashboard et des exports
+                // (App\Enums\VisitorStatus::VISIT_LABELS).
                 'tiles' => [
-                    ['label' => '1re visite', 'value' => $report->counts['v1']],
-                    ['label' => '2e visite', 'value' => $report->counts['v2']],
-                    ['label' => '3e visite', 'value' => $report->counts['v3']],
+                    ['label' => VisitorStatus::visitLabel(1), 'value' => $report->counts['v1']],
+                    ['label' => VisitorStatus::visitLabel(2), 'value' => $report->counts['v2']],
+                    ['label' => VisitorStatus::visitLabel(3), 'value' => $report->counts['v3']],
                     ['label' => 'Total', 'value' => $report->counts['total']],
                     ['label' => 'Conversions', 'value' => $report->counts['conversions']],
                 ],
                 'visitors' => array_map(static fn (array $visitor): array => [
                     'full_name' => $visitor['full_name'],
                     'phone' => PhoneNumberService::formatInternational($visitor['phone']),
-                    'visit' => self::ordinal($visitor['visit_number']).' visite',
+                    'visit' => VisitorStatus::visitLabel($visitor['visit_number']),
                     'date' => $visitor['visit_date']->format('d/m/Y'),
                 ], $report->visitors),
                 'conversions' => array_map(static fn (array $conversion): array => [
@@ -79,13 +82,5 @@ class MonthlyReportMail extends Mailable
         $base = config('app.url');
 
         return rtrim(is_string($base) ? $base : '', '/')."/admin/rapports/{$year}/{$month}";
-    }
-
-    /**
-     * « 1re », « 2e », « 3e » (typographie du cahier).
-     */
-    private static function ordinal(int $number): string
-    {
-        return $number === 1 ? '1re' : "{$number}e";
     }
 }

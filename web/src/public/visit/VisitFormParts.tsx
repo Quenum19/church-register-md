@@ -16,6 +16,8 @@ interface VisitFormShellProps {
   summaryItems: SummaryItem[]
   focusKey: number
   submitError: DisplayError | null
+  /** Accueil du parcours : « / », ou « /e/{slug} » sur un lien de culte spécial. */
+  homePath?: string
   children: ReactNode
 }
 
@@ -30,10 +32,16 @@ export function VisitFormShell({
   summaryItems,
   focusKey,
   submitError,
+  homePath,
   children,
 }: VisitFormShellProps) {
   return (
-    <Shell visit={step} title={title} subtitle={subtitle} top={<BackHome disabled={submitting} hasDraft={hasDraft} />}>
+    <Shell
+      visit={step}
+      title={title}
+      subtitle={subtitle}
+      top={<BackHome disabled={submitting} hasDraft={hasDraft} to={homePath} />}
+    >
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-6" aria-busy={submitting}>
         <ErrorSummary items={summaryItems} focusKey={focusKey} />
         {children}

@@ -46,7 +46,7 @@ describe('fiche visiteur — conversion', () => {
 
     const button = await screen.findByRole('button', { name: /Convertir en membre/ })
     expect(button).toBeDisabled()
-    expect(button).toHaveAccessibleDescription(/Conversion possible après la 3e visite/)
+    expect(button).toHaveAccessibleDescription(/Conversion possible après la troisième visite/)
   })
 
   it('convertit un membre potentiel après confirmation', async () => {

@@ -70,6 +70,37 @@ it('chiffre exactement { phone_e164, country, step, jti, exp }', function (): vo
     expect(array_keys($payload))->toBe(['phone_e164', 'country', 'step', 'jti', 'exp']);
 });
 
+it('n\'ajoute `event_id` au contenu chiffré que pour un lien dédié d\'événement', function (): void {
+    $withEvent = json_decode(Crypt::decryptString($this->tokens->issue('+2250700000000', PhoneCountry::CI, 1, 42)), true);
+
+    expect(array_keys($withEvent))->toBe(['phone_e164', 'country', 'step', 'jti', 'exp', 'event_id'])
+        ->and($withEvent['event_id'])->toBe(42)
+        ->and($this->tokens->decode($this->tokens->issue('+2250700000000', PhoneCountry::CI, 1, 42))->eventId)->toBe(42)
+        // Parcours ordinaire : jeton inchangé, `eventId` nul.
+        ->and($this->tokens->decode($this->tokens->issue('+2250700000000', PhoneCountry::CI, 2))->eventId)->toBeNull();
+});
+
+it('relit sans erreur un jeton émis avant la mise en service des événements', function (): void {
+    // Jeton « historique » (sans clé `event_id`) : il reste valable pendant le déploiement.
+    $token = $this->tokens->decode(journeyEncryptedPayload(journeyTokenPayload()));
+
+    expect($token->eventId)->toBeNull()->and($token->step)->toBe(2);
+});
+
+it('refuse un `event_id` falsifié', function (mixed $eventId): void {
+    journeyExpectApiError(
+        fn () => $this->tokens->decode(journeyEncryptedPayload(journeyTokenPayload(['event_id' => $eventId]))),
+        'token_invalid',
+        401,
+    );
+})->with([
+    'chaîne' => ['42'],
+    'zéro' => [0],
+    'négatif' => [-1],
+    'tableau' => [[42]],
+    'décimal' => [4.2],
+]);
+
 it('n\'émet de jeton que pour les étapes 1 à 3', function (int $step): void {
     $this->tokens->issue('+2250700000000', PhoneCountry::CI, $step);
 })->with([0, 4])->throws(InvalidArgumentException::class);

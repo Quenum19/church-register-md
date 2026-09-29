@@ -4,7 +4,7 @@ import { configure, render, screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { vi } from 'vitest'
-import type { PublicConfig } from '../../shared/api-types'
+import type { PublicConfig, PublicEvent } from '../../shared/api-types'
 import PublicApp from '../PublicApp'
 import { LocationProbe } from './LocationProbe'
 import { clearPublicConfigCache } from '../journey/api'
@@ -25,6 +25,15 @@ export const CONFIG: PublicConfig = {
     { id: 4, name: 'Force' },
   ],
 }
+
+/** Culte spécial du dimanche 4 octobre 2026, ouvert par « /e/culte-4-octobre ». */
+export const EVENT: PublicEvent = {
+  slug: 'culte-4-octobre',
+  name: 'Culte spécial du 4 octobre 2026',
+  event_date: '2026-10-04',
+}
+
+export const EVENT_PATH = `/api/public/events/${EVENT.slug}`
 
 export type Reply = { status: number; body?: unknown; headers?: Record<string, string> } | 'network'
 

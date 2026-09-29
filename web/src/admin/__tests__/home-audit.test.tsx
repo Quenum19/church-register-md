@@ -26,7 +26,7 @@ describe('accueil — visites par famille', () => {
     renderAdmin('/admin')
 
     expect(await screen.findByRole('list', { name: 'Légende' })).toBeInTheDocument()
-    expect(screen.getByText('(1re : 5 · 2e : 3 · 3e : 1)')).toBeInTheDocument()
+    expect(screen.getByText('(Première : 5 · Deuxième : 3 · Troisième : 1)')).toBeInTheDocument()
     expect(screen.queryByText('Aucune visite enregistrée cette année.')).not.toBeInTheDocument()
   })
 })

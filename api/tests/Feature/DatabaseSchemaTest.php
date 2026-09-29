@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLog;
+use App\Models\Event;
 use App\Models\Family;
 use App\Models\Member;
 use App\Models\ReportDispatch;
@@ -86,6 +87,24 @@ it('garde la visite si sa famille est supprimée, mais protège les rotations', 
     $serving->rotations()->create(['year' => 2040, 'month' => 1]);
 
     expect(fn () => $serving->delete())->toThrow(QueryException::class);
+});
+
+it('rend unique le lien d\'un événement et détache ses visites à sa suppression', function (): void {
+    $event = Event::factory()->create(['slug' => 'culte-4-octobre']);
+
+    expect(fn () => Event::factory()->create(['slug' => 'culte-4-octobre']))
+        ->toThrow(UniqueConstraintViolationException::class);
+
+    $visit = Visit::factory()->create(['event_id' => $event->id]);
+    $author = User::factory()->superAdmin()->create();
+    $orphan = Event::factory()->create(['created_by' => $author->id]);
+
+    $event->delete();
+    $author->delete();
+
+    // ON DELETE SET NULL des deux côtés : ni la visite ni l'événement ne disparaissent.
+    expect($visit->fresh()?->event_id)->toBeNull()
+        ->and($orphan->fresh()?->created_by)->toBeNull();
 });
 
 it('rend unique un envoi de rapport par mois', function (): void {

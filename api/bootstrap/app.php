@@ -40,9 +40,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/api/auth.php'));
 
             // API admin, découpée par propriétaire : admin.php (visiteurs, stats, exports, rotations,
-            // paramètres), users.php (administrateurs, journal d'audit), reports.php (rapports, destinataires).
+            // paramètres), users.php (administrateurs, journal d'audit), reports.php (rapports, destinataires),
+            // events.php (cultes spéciaux et évangélisations, liens dédiés).
             // Même préfixe /api/admin, authentifié, compte actif, 120 requêtes/min par utilisateur.
-            foreach (['admin', 'users', 'reports'] as $file) {
+            foreach (['admin', 'users', 'reports', 'events'] as $file) {
                 Route::prefix(RouteGroups::ADMIN_PREFIX)
                     ->middleware(RouteGroups::ADMIN_MIDDLEWARE)
                     ->name('admin.')

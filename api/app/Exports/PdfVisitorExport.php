@@ -45,14 +45,18 @@ class PdfVisitorExport
     public const TITLE = 'Liste des visiteurs';
 
     /**
-     * Largeur des 12 colonnes en % de la largeur utile (A4 paysage, marges de 10 mm : 277 mm),
+     * Largeur des 13 colonnes en % de la largeur utile (A4 paysage, marges de 10 mm : 277 mm),
      * dans l'ordre de VisitorExport::HEADINGS ; total = 100. Calibrées à 8 pt pour que
      * « +225 07 00 00 0001 », « 02/08/2026 » et les intitulés d'en-tête tiennent sans
-     * chevauchement ni césure disgracieuse.
+     * chevauchement ni césure disgracieuse. La colonne « Statut » a été élargie (libellés
+     * en toutes lettres : « Première visite », « Membre potentiel ») et la colonne
+     * « Événement » prise sur les colonnes les plus larges.
+     *
+     * Toutes les valeurs sont des multiples de 0,5 : leur somme vaut exactement 100.
      *
      * @var list<float>
      */
-    public const COLUMN_WIDTHS = [12.5, 11.5, 11.5, 7.0, 8.5, 6.5, 5.5, 7.0, 7.0, 7.5, 9.0, 6.5];
+    public const COLUMN_WIDTHS = [11.5, 10.5, 10.5, 6.5, 7.5, 7.0, 5.0, 6.5, 6.5, 7.0, 8.5, 6.0, 7.0];
 
     /** Marge gauche et droite du pied de page, en points (10 mm, comme @page). */
     private const MARGIN_X = 28.35;

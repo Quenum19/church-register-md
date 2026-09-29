@@ -33,6 +33,7 @@ final class VisitorListQuery
         public readonly ?string $search = null,
         public readonly ?string $status = null,
         public readonly ?int $familyId = null,
+        public readonly ?int $eventId = null,
         public readonly ?string $from = null,
         public readonly ?string $to = null,
         public readonly string $sort = self::DEFAULT_SORT,
@@ -49,6 +50,7 @@ final class VisitorListQuery
             'search' => ['sometimes', 'nullable', 'string', 'max:'.self::SEARCH_MAX_LENGTH],
             'status' => ['sometimes', 'nullable', 'string', Rule::in([...VisitorStatus::values(), self::STATUS_NON_MEMBER])],
             'family_id' => ['sometimes', 'nullable', 'integer', 'min:1', 'exists:families,id'],
+            'event_id' => ['sometimes', 'nullable', 'integer', 'min:1', 'exists:events,id'],
             'from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'to' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
             'sort' => ['sometimes', 'nullable', 'string', Rule::in(self::SORTS)],
@@ -66,6 +68,7 @@ final class VisitorListQuery
             'search' => 'recherche',
             'status' => 'statut',
             'family_id' => 'famille',
+            'event_id' => 'événement',
             'from' => 'date de début',
             'to' => 'date de fin',
             'sort' => 'tri',
@@ -82,11 +85,13 @@ final class VisitorListQuery
             : null;
 
         $familyId = $validated['family_id'] ?? null;
+        $eventId = $validated['event_id'] ?? null;
 
         return new self(
             search: $string('search'),
             status: $string('status'),
             familyId: is_numeric($familyId) ? (int) $familyId : null,
+            eventId: is_numeric($eventId) ? (int) $eventId : null,
             from: $string('from'),
             to: $string('to'),
             sort: $string('sort') ?? self::DEFAULT_SORT,
@@ -116,6 +121,15 @@ final class VisitorListQuery
             $familyId = $this->familyId;
             $query->whereHas('visits', function (Builder $visits) use ($familyId): void {
                 $visits->where('family_id', $familyId);
+            });
+        }
+
+        // Visiteurs ayant AU MOINS UNE visite rattachée à cet événement (en pratique la 1re,
+        // celle faite depuis le lien dédié) ; se combine en ET avec les autres filtres.
+        if ($this->eventId !== null) {
+            $eventId = $this->eventId;
+            $query->whereHas('visits', function (Builder $visits) use ($eventId): void {
+                $visits->where('event_id', $eventId);
             });
         }
 
@@ -186,6 +200,7 @@ final class VisitorListQuery
             'search' => $this->search !== null,
             'status' => $this->status,
             'family_id' => $this->familyId,
+            'event_id' => $this->eventId,
             'from' => $this->from,
             'to' => $this->to,
             'sort' => $this->sort,

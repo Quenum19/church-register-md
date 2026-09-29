@@ -25,6 +25,7 @@ const PATHS = {
   check: 'M5 12l5 5L20 7',
   user: 'M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
   calendar: 'M4 6h16v14H4zm0 4h16M8 3v4m8-4v4',
+  copy: 'M9 9h12v12H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1',
 } as const
 
 export type IconName = keyof typeof PATHS

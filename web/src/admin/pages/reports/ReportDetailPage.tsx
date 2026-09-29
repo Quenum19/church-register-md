@@ -12,7 +12,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { ErrorState, LoadingState } from '../../components/States'
 import { useToast } from '../../components/toast/context'
 import { linkClass, tableCellClass, tableHeadClass } from '../../components/styles'
-import { ordinal } from '../../lib/answers'
+import { visitOrdinalLabel } from '../../lib/labels'
 import { errorMessage, isApiError } from '../../lib/errors'
 import { capitalize, formatDate, formatDateTime, formatMonth, ofMonth, todayParts } from '../../lib/format'
 import { parseMonth, parseYear } from '../../lib/params'
@@ -94,9 +94,9 @@ function SendReport({ report }: { report: ReportDetail }) {
 
 function Summary({ report }: { report: ReportDetail }) {
   const items = [
-    { label: '1re visite', value: report.counts.v1 },
-    { label: '2e visite', value: report.counts.v2 },
-    { label: '3e visite', value: report.counts.v3 },
+    { label: 'Première visite', value: report.counts.v1 },
+    { label: 'Deuxième visite', value: report.counts.v2 },
+    { label: 'Troisième visite', value: report.counts.v3 },
     { label: 'Total des visites', value: report.counts.total },
     { label: 'Conversions', value: report.counts.conversions },
   ]
@@ -190,7 +190,7 @@ function ReportView({ report }: { report: ReportDetail }) {
                         </Link>
                       </th>
                       <td className={clsx(tableCellClass, 'whitespace-nowrap')}>{formatPhone(v.phone)}</td>
-                      <td className={tableCellClass}>{ordinal(v.visit_number)}</td>
+                      <td className={tableCellClass}>{visitOrdinalLabel(v.visit_number)}</td>
                       <td className={clsx(tableCellClass, 'whitespace-nowrap')}>{formatDate(v.visit_date)}</td>
                     </tr>
                   ))}
@@ -200,7 +200,7 @@ function ReportView({ report }: { report: ReportDetail }) {
           )}
         </Card>
 
-        <Card title="Conversions" description="Membres convertis ce mois-ci dont la 1re visite a été accueillie par cette famille.">
+        <Card title="Conversions" description="Membres convertis ce mois-ci dont la première visite a été accueillie par cette famille.">
           {report.conversions.length === 0 ? (
             <p className="text-sm text-gray-700">Aucune conversion ce mois-ci.</p>
           ) : (

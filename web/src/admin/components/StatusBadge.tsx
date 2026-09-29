@@ -1,5 +1,6 @@
 import { clsx } from 'clsx'
-import { STATUS_LABELS, type VisitorStatus } from '../../shared/domain'
+import type { VisitorStatus } from '../../shared/domain'
+import { statusLabel } from '../lib/labels'
 
 const COLORS: Record<VisitorStatus, string> = {
   prospect: 'border-blue-200 bg-blue-50 text-blue-800',
@@ -11,7 +12,7 @@ const COLORS: Record<VisitorStatus, string> = {
 export function StatusBadge({ status }: { status: VisitorStatus }) {
   return (
     <span className={clsx('inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-bold', COLORS[status])}>
-      {STATUS_LABELS[status] ?? status}
+      {statusLabel(status)}
     </span>
   )
 }

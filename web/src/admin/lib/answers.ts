@@ -38,9 +38,3 @@ export function describeAnswers(answers: Visit['answers'] | null | undefined): A
   }
   return lines
 }
-
-const ORDINALS: Record<number, string> = { 1: '1re', 2: '2e', 3: '3e' }
-
-export function ordinal(visitNumber: number): string {
-  return ORDINALS[visitNumber] ?? `${visitNumber}e`
-}

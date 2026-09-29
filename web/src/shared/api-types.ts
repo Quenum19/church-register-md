@@ -82,11 +82,27 @@ export interface PublicConfig {
   families: FamilyRef[]
 }
 
+/**
+ * GET /api/public/events/{slug} — culte spécial ouvert par un lien dédié
+ * (`/e/{slug}`). 404 si le slug est inconnu ou l'événement inactif.
+ */
+export interface PublicEvent {
+  slug: string
+  name: string
+  /** La date est facultative à la création de l'événement : le serveur renvoie alors `null`. */
+  event_date: string | null
+}
+
 export type IdentifyStep = 1 | 2 | 3 | 'complete' | 'done_today'
 
 export interface IdentifyRequest {
   country: CountryCode
   phone: string
+}
+
+/** Identification depuis un lien événement : `event` porte le slug (422 sur `event` si invalide). */
+export interface IdentifyEventRequest extends IdentifyRequest {
+  event: string
 }
 
 export interface IdentifyResponse {
@@ -373,4 +389,53 @@ export interface AuditLog {
   ip: string | null
   created_at: string
   meta: Record<string, unknown> | null
+}
+
+/* ─── Admin : événements (cultes spéciaux) ───────────────────────── */
+// Ajout au contrat : chaque événement possède son lien public (`/e/{slug}`) et son
+// QR code, distincts du lien habituel. Déclaré ici en ajout pur (aucun bloc
+// existant n'est modifié) ; à fusionner avec les blocs ci-dessus au prochain
+// passage sur docs/api-contract.md.
+
+/** Événement tel qu'il est rattaché à une visite. */
+export interface EventRef {
+  id: number
+  name: string
+  slug: string
+}
+
+/**
+ * Culte spécial disposant d'un lien d'inscription dédié.
+ * (Ressource `Event` du contrat ; renommée pour ne pas masquer le type global `Event` du DOM.)
+ */
+export interface ChurchEvent extends EventRef {
+  /** Date du culte au format `YYYY-MM-DD`, ou `null` si elle n'est pas fixée. */
+  event_date: string | null
+  /** Lien inactif : le formulaire public refuse les nouvelles inscriptions. */
+  active: boolean
+  /** Lien public complet, ex. `https://registre.newinechurch.org/e/evangelisation-4-octobre`. */
+  url: string
+  visits_count: number
+  visitors_count: number
+  created_at: string
+}
+
+/** Corps de POST /api/admin/events et de PATCH /api/admin/events/{id} (champs optionnels en PATCH). */
+export interface EventInput {
+  name: string
+  slug: string
+  event_date: string | null
+  active: boolean
+}
+
+// Fusion de déclarations : ajoute `event_id` aux filtres de la liste des visiteurs
+// sans toucher au bloc « Admin : visiteurs » ci-dessus.
+export interface VisitorFilters {
+  event_id?: number
+}
+
+// Fusion de déclarations : la fiche visiteur indique l'événement de chaque visite.
+export interface Visit {
+  /** Événement par lequel la personne s'est inscrite, `null` pour une visite ordinaire. */
+  event?: EventRef | null
 }

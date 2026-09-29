@@ -4,6 +4,7 @@ namespace App\Services\Journey;
 
 use App\Enums\VisitorStatus;
 use App\Exceptions\ApiException;
+use App\Models\Event;
 use App\Models\Visit;
 use App\Models\Visitor;
 use App\Services\FamilyRotationService;
@@ -142,6 +143,9 @@ class VisitRecorder
             'visit_number' => $token->step,
             'visit_date' => $now->toDateString(),
             'family_id' => $family?->id,
+            // Événement d'origine (lien dédié) porté par le jeton : seule la visite enregistrée
+            // depuis ce lien le porte ; les suivantes, faites au lien ordinaire, valent null.
+            'event_id' => $this->eventId($token),
             'answers' => $submission->answers,
             'idempotency_key' => $idempotencyKey,
         ]);
@@ -154,6 +158,25 @@ class VisitRecorder
         }
 
         return new RecordedVisit($token->step, $family, true);
+    }
+
+    /**
+     * Événement du jeton, relu juste avant l'insertion.
+     *
+     * Un jeton vit 15 minutes : l'événement a pu être supprimé entre-temps (la suppression
+     * n'est possible que tant qu'aucune visite n'y est rattachée). La visite est alors
+     * enregistrée SANS événement, plutôt que d'échouer sur la clé étrangère. Un événement
+     * seulement désactivé reste mémorisé : la personne était déjà engagée dans son parcours.
+     */
+    private function eventId(VisitToken $token): ?int
+    {
+        if ($token->eventId === null) {
+            return null;
+        }
+
+        $id = Event::query()->whereKey($token->eventId)->value('id');
+
+        return is_numeric($id) ? (int) $id : null;
     }
 
     /**

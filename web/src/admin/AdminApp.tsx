@@ -8,6 +8,7 @@ import { GuestOnly, RequireAbility, RequireAuth } from './auth/guards'
 import { ToastProvider } from './components/toast/ToastProvider'
 import { AdminLayout } from './layout/AdminLayout'
 import { AuditPage } from './pages/AuditPage'
+import { EventsPage } from './pages/events/EventsPage'
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
@@ -88,6 +89,14 @@ export default function AdminApp({ queryClient }: { queryClient?: QueryClient })
                 element={
                   <RequireAbility ability="visitors.view">
                     <ReportDetailPage />
+                  </RequireAbility>
+                }
+              />
+              <Route
+                path="evenements"
+                element={
+                  <RequireAbility ability="visitors.view">
+                    <EventsPage />
                   </RequireAbility>
                 }
               />

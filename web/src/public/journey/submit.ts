@@ -4,7 +4,7 @@
 import type { CreateVisitResponse, IdentifyResponse, VisitAnswers } from '../../shared/api-types'
 import { ApiError } from '../../shared/http'
 import { postVisit } from './api'
-import { applyIdentifyResult, pathForStep, requestIdentify, tokenExpiry, unexpectedResponse } from './flow'
+import { applyIdentifyResult, eventPath, pathForStep, requestIdentify, tokenExpiry, unexpectedResponse } from './flow'
 import type { JourneyStore, VisitStep } from './store'
 
 /** UUID v4 ; repli sur getRandomValues pour les navigateurs sans randomUUID (iOS < 15.4). */
@@ -42,11 +42,14 @@ const MAX_REIDENTIFICATIONS = 2
  * visite (même étape, nouveau jeton), sinon l'issue à appliquer (redirection ou erreur).
  */
 async function reidentify(store: JourneyStore, step: VisitStep): Promise<SubmitOutcome | null> {
-  const entry = store.getState().identified
-  if (!entry) return { kind: 'redirect', to: '/' }
+  const { identified: entry, event } = store.getState()
+  // Le slug est relu avant d'appliquer le résultat : « complete »/« done_today » efface l'état.
+  const eventSlug = event?.slug ?? null
+  if (!entry) return { kind: 'redirect', to: eventSlug ? eventPath(eventSlug) : '/' }
   let res: IdentifyResponse
   try {
-    res = await requestIdentify(entry)
+    // Le jeton porte l'événement : une ré-identification silencieuse doit le redonner.
+    res = await requestIdentify(entry, undefined, eventSlug)
   } catch (error) {
     return { kind: 'error', error }
   }
@@ -56,7 +59,7 @@ async function reidentify(store: JourneyStore, step: VisitStep): Promise<SubmitO
   }
   // L'étape a changé entre-temps (visite faite ailleurs, parcours terminé…).
   applyIdentifyResult(store, entry, res)
-  return { kind: 'redirect', to: pathForStep(res.step) }
+  return { kind: 'redirect', to: pathForStep(res.step, eventSlug) }
 }
 
 export interface SubmitOptions {
@@ -81,8 +84,8 @@ export async function submitVisit(
   let keyRenewed = false
 
   for (;;) {
-    const { token, identified } = store.getState()
-    if (!identified) return { kind: 'redirect', to: '/' }
+    const { token, identified, event } = store.getState()
+    if (!identified) return { kind: 'redirect', to: event ? eventPath(event.slug) : '/' }
 
     if (!token) {
       if (reidentifications >= MAX_REIDENTIFICATIONS) return { kind: 'error', error: unexpectedResponse() }

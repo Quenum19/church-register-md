@@ -31,6 +31,7 @@ export const queryKeys = {
     list: (year: number) => ['admin', 'reports', 'list', year] as const,
     detail: (year: number, month: number) => ['admin', 'reports', 'detail', year, month] as const,
   },
+  events: ['admin', 'events'] as const,
   users: ['admin', 'users'] as const,
   settings: ['admin', 'settings'] as const,
   families: ['admin', 'families'] as const,

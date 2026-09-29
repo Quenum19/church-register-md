@@ -30,11 +30,11 @@ function summary() {
   return screen.getByRole('region', { name: /à corriger/ })
 }
 
-describe('Formulaire de la 1re visite', () => {
+describe('Formulaire de la première visite', () => {
   it('affiche un résumé d’erreurs focalisé et relie chaque erreur à son champ', async () => {
     const user = userEvent.setup({ delay: null })
     renderPublic('/visite/1')
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     await submit(user)
 
     const region = await screen.findByRole('region', { name: '5 points sont à corriger :' })
@@ -58,7 +58,7 @@ describe('Formulaire de la 1re visite', () => {
   it('« Invité(e) par un membre » exige le nom de l’invitant et propose sa famille', async () => {
     const user = userEvent.setup({ delay: null })
     renderPublic('/visite/1')
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     expect(screen.queryByLabelText('Nom de la personne qui vous a invité(e)')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: 'Invité(e) par un membre' }))
@@ -83,7 +83,7 @@ describe('Formulaire de la 1re visite', () => {
   it('propose trois choix WhatsApp et ne révèle les champs que pour « un autre numéro »', async () => {
     const user = userEvent.setup({ delay: null })
     renderPublic('/visite/1')
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
 
     const group = screen.getByRole('group', { name: 'Votre numéro WhatsApp' })
     const options = within(group).getAllByRole('radio')
@@ -107,7 +107,7 @@ describe('Formulaire de la 1re visite', () => {
   it('« Je n’ai pas de WhatsApp » est incompatible avec la demande de groupe', async () => {
     const user = userEvent.setup({ delay: null })
     renderPublic('/visite/1')
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     await user.click(screen.getByRole('checkbox', { name: /rejoindre le groupe WhatsApp/ }))
     const none = screen.getByRole('radio', { name: "Je n'ai pas de WhatsApp" })
     await user.click(none)
@@ -138,7 +138,7 @@ describe('Formulaire de la 1re visite', () => {
   it('le consentement est obligatoire et renvoie vers la mention d’information', async () => {
     const user = userEvent.setup({ delay: null })
     renderPublic('/visite/1')
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     const consent = screen.getByRole('checkbox', { name: /J'accepte que l'Église enregistre ces informations/ })
     expect(screen.getByRole('link', { name: "Lire la mention d'information" })).toHaveAttribute('href', '/confidentialite')
     await submit(user)

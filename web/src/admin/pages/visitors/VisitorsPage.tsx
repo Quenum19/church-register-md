@@ -78,7 +78,7 @@ function VisitorTable({ visitors, backState }: { visitors: VisitorSummary[]; bac
             <th scope="col" className={tableHeadClass}>Commune / quartier</th>
             <th scope="col" className={tableHeadClass}>Statut</th>
             <th scope="col" className={tableHeadClass}>Visites</th>
-            <th scope="col" className={tableHeadClass}>1re visite</th>
+            <th scope="col" className={tableHeadClass}>Première visite</th>
             <th scope="col" className={tableHeadClass}>Dernière visite</th>
           </tr>
         </thead>

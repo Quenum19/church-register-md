@@ -31,6 +31,16 @@ export interface VisitResult {
   name: string | null
 }
 
+/**
+ * Culte spécial atteint par son lien dédié (`/e/{slug}`). Conservé dans l'état du
+ * parcours : il survit au rafraîchissement et accompagne chaque identification,
+ * y compris les ré-identifications silencieuses faites pendant un envoi.
+ */
+export interface JourneyEvent {
+  slug: string
+  name: string
+}
+
 export interface JourneyState {
   version: typeof STATE_VERSION
   updatedAt: number
@@ -44,6 +54,8 @@ export interface JourneyState {
   idempotencyKeys: Partial<Record<VisitStep, string>>
   drafts: Partial<Record<VisitStep, Record<string, unknown>>>
   result: VisitResult | null
+  /** Événement en cours, ou null pour le parcours habituel. */
+  event: JourneyEvent | null
 }
 
 export interface JourneyStore {
@@ -67,6 +79,7 @@ export function emptyState(now = Date.now()): JourneyState {
     idempotencyKeys: {},
     drafts: {},
     result: null,
+    event: null,
   }
 }
 
@@ -108,6 +121,13 @@ function parseResult(value: unknown): VisitResult | null {
   }
 }
 
+function parseEvent(value: unknown): JourneyEvent | null {
+  if (!isRecord(value)) return null
+  const { slug, name } = value
+  if (typeof slug !== 'string' || !slug.trim() || typeof name !== 'string' || !name.trim()) return null
+  return { slug, name }
+}
+
 export interface StoredState {
   state: JourneyState
   /**
@@ -146,6 +166,7 @@ export function readStoredState(raw: string | null, now = Date.now()): StoredSta
       idempotencyKeys: parseStepRecord(data.idempotencyKeys, (v): v is string => typeof v === 'string' && v.length > 0),
       drafts: parseStepRecord(data.drafts, isRecord),
       result: parseResult(data.result),
+      event: parseEvent(data.event),
     },
     stale: false,
   }

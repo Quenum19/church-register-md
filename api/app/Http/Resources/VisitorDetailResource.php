@@ -19,6 +19,7 @@ class VisitorDetailResource extends VisitorSummaryResource
     public const RELATIONS = [
         'inviterFamily:id,name',
         'visits.family:id,name',
+        'visits.event:id,name,slug',
         'notes.author:id,name',
         'member.convertedBy:id,name',
     ];
@@ -43,6 +44,8 @@ class VisitorDetailResource extends VisitorSummaryResource
                 'visit_number' => $visit->visit_number,
                 'visit_date' => $visit->visit_date->toDateString(),
                 'family' => FamilyResource::ref($visit->family),
+                // Événement d'origine (culte spécial, évangélisation), null pour le lien ordinaire.
+                'event' => EventResource::ref($visit->event),
                 // Objet JSON, y compris vide (« {} » pour la visite 1).
                 'answers' => (object) $visit->answers,
             ])->values()->all(),

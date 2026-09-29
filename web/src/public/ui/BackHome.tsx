@@ -12,10 +12,12 @@ interface BackHomeProps {
   disabled?: boolean
   /** Vrai si une saisie est en cours : on demande alors confirmation. */
   hasDraft: () => boolean
+  /** Accueil à rejoindre : celui du culte spécial (« /e/{slug} ») le cas échéant. */
+  to?: string
 }
 
 /** « Retour à l'accueil » : abandonne le parcours, avec confirmation si un brouillon existe. */
-export function BackHome({ disabled = false, hasDraft }: BackHomeProps) {
+export function BackHome({ disabled = false, hasDraft, to = '/' }: BackHomeProps) {
   const store = useJourneyStore()
   const navigate = useNavigate()
   const [confirming, setConfirming] = useState(false)
@@ -34,7 +36,7 @@ export function BackHome({ disabled = false, hasDraft }: BackHomeProps) {
 
   const leave = () => {
     store.reset()
-    navigate('/')
+    navigate(to)
   }
 
   if (confirming) {

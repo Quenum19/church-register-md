@@ -62,10 +62,12 @@ class XlsxVisitorExport
      * Largeur des colonnes en « caractères » Excel, dans l'ordre de VisitorExport::HEADINGS :
      * ajustée au plus long des intitulés et des valeurs attendues. « Nombre de visites »,
      * « Dernière visite » et « +225 07 00 00 0001 » ne doivent plus être tronqués à l'ouverture.
+     * « Statut » accueille désormais « Membre potentiel » et « Première visite », et la dernière
+     * colonne le nom d'un événement (« Culte spécial du 4 octobre »).
      *
      * @var list<float>
      */
-    public const COLUMN_WIDTHS = [26.0, 20.0, 20.0, 16.0, 18.0, 17.0, 19.0, 13.0, 17.0, 22.0, 24.0, 20.0];
+    public const COLUMN_WIDTHS = [26.0, 20.0, 20.0, 16.0, 18.0, 19.0, 19.0, 13.0, 17.0, 22.0, 24.0, 20.0, 28.0];
 
     public function __construct(
         private readonly VisitorExport $export,

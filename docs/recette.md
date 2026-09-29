@@ -45,6 +45,23 @@ jour, volontairement). Pour les tester tout de suite, voir la section E.
 
 **Page tablette `/qrcode`** : le QR s'affiche en grand avec le verset, et l'écran ne s'éteint pas.
 
+### A-bis. Lien d'un culte spécial (`/e/{slug}`)
+
+À faire avant chaque événement, après l'avoir créé dans Dashboard → **Événements**.
+
+| | Test | Attendu |
+|---|---|---|
+| E1 | Ouvrir le lien de l'événement | Le nom de l'événement s'affiche sur l'écran d'identification |
+| E2 | Aller au formulaire | Version allégée : **deux** origines seulement, une **seule** case WhatsApp |
+| E3 | Cocher « Rejoindre le Groupe WhatsApp des nouvelles personnes » | Le numéro de l'accueil est rappelé, avec un champ facultatif pour un autre numéro |
+| E4 | Envoyer, puis ouvrir la fiche dans le dashboard | « Inscrit lors de : {nom de l'événement} » |
+| E5 | Filtrer la liste des visiteurs sur l'événement | Seules les personnes de l'événement apparaissent, et l'export les reprend avec la colonne « Événement » |
+| E6 | Revenir au culte suivant par le QR **habituel** | La personne enchaîne bien sur sa **deuxième visite** |
+| E7 | Désactiver l'événement, rouvrir son lien | « Ce lien n'est plus actif », avec un lien vers le formulaire habituel |
+| E8 | Imprimer l'affiche depuis la page Événements | Le nom de l'événement y figure, et le QR mène bien à `/e/{slug}` |
+
+⚠️ **Modifier le slug d'un événement déjà imprimé invalide les QR codes distribués.** L'interface vous en avertit.
+
 ---
 
 ## B. Dashboard (ordinateur, puis téléphone)

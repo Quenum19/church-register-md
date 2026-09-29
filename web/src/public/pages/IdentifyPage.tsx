@@ -7,9 +7,9 @@ import { DEFAULT_COUNTRY, findCountry, type CountryCode } from '../../shared/dom
 import { ApiError } from '../../shared/http'
 import { useJourneyStore } from '../journey/context'
 import { toDisplayError, type DisplayError } from '../journey/errors'
-import { identify, pathForStep } from '../journey/flow'
+import { eventPath, identify, pathForStep } from '../journey/flow'
 import { cleanPhoneInput, formatPhoneWithDial, phoneHint, validatePhone } from '../journey/phone'
-import type { PhoneEntry } from '../journey/store'
+import type { JourneyEvent, PhoneEntry } from '../journey/store'
 import { preloadJourneyPages } from '../visit/preload'
 import { buttonPrimary, buttonSecondary } from '../ui/classes'
 import { Alert, LiveStatus, Spinner } from '../ui/Feedback'
@@ -20,7 +20,22 @@ interface IdentifyLocationState {
   confirm?: boolean
 }
 
-export default function IdentifyPage() {
+interface IdentifyPageProps {
+  /** Culte spécial atteint par son lien dédié ; absent sur l'accueil habituel. */
+  event?: JourneyEvent | null
+}
+
+/** Bandeau du culte spécial, au-dessus du titre. */
+function EventBanner({ name }: { name: string }) {
+  return (
+    <p className="mx-auto w-fit rounded-full border-2 border-church-gold bg-church-gold-pale px-4 py-1 text-center font-bold text-church-purple-dk">
+      <span aria-hidden="true">✨ </span>
+      {name}
+    </p>
+  )
+}
+
+export default function IdentifyPage({ event = null }: IdentifyPageProps) {
   const store = useJourneyStore()
   const navigate = useNavigate()
   const location = useLocation()
@@ -41,6 +56,8 @@ export default function IdentifyPage() {
   // un retour arrière ne réaffiche jamais le numéro du visiteur précédent.
   const [typed, setTyped] = useState<PhoneEntry | null>(() => store.getState().typed)
   const confirming = (location.state as IdentifyLocationState | null)?.confirm === true && typed !== null
+  // Accueil de ce parcours : « / », ou le lien du culte spécial.
+  const home = event ? eventPath(event.slug) : '/'
 
   // Formulaires et pages de fin sont préchargés pendant la saisie du numéro.
   useEffect(() => {
@@ -58,14 +75,20 @@ export default function IdentifyPage() {
     }
   }, [confirming])
 
+  // L'accueil habituel n'appartient à aucun événement : un événement laissé dans l'état
+  // du parcours (lien ouvert plus tôt dans l'onglet) ne doit pas être renvoyé à identify.
+  useEffect(() => {
+    if (!event && store.getState().event) store.setState({ event: null })
+  }, [store, event])
+
   const backToInput = () => {
     setRequestError(null)
     if (location.key !== 'default') navigate(-1)
-    else navigate('/', { replace: true })
+    else navigate(home, { replace: true })
   }
 
-  const onContinue = (event: FormEvent) => {
-    event.preventDefault()
+  const onContinue = (submitted: FormEvent) => {
+    submitted.preventDefault()
     const error = validatePhone(phone, country)
     if (error) {
       setPhoneError(error)
@@ -77,7 +100,7 @@ export default function IdentifyPage() {
     const entry = { country, phone: phone.trim() }
     store.setState({ typed: entry })
     setTyped(entry)
-    navigate('/', { state: { confirm: true } satisfies IdentifyLocationState })
+    navigate(home, { state: { confirm: true } satisfies IdentifyLocationState })
   }
 
   const runIdentify = async () => {
@@ -89,7 +112,7 @@ export default function IdentifyPage() {
     try {
       const step = await identify(store, typed, controller.signal)
       // Le bouton reste désactivé jusqu'au changement de page (pas de double envoi).
-      navigate(pathForStep(step))
+      navigate(pathForStep(step, event?.slug))
     } catch (error) {
       if (controller.signal.aborted) return
       setBusy(false)
@@ -103,8 +126,8 @@ export default function IdentifyPage() {
     }
   }
 
-  const onConfirm = (event: FormEvent) => {
-    event.preventDefault()
+  const onConfirm = (submitted: FormEvent) => {
+    submitted.preventDefault()
     void runIdentify()
   }
 
@@ -113,6 +136,7 @@ export default function IdentifyPage() {
     return (
       <Shell
         hero
+        top={event && <EventBanner name={event.name} />}
         title="C'est bien votre numéro ?"
         subtitle={<p>Vérifiez-le attentivement : il vous permettra d'être reconnu(e) lors de vos prochaines visites.</p>}
       >
@@ -159,6 +183,7 @@ export default function IdentifyPage() {
   return (
     <Shell
       hero
+      top={event && <EventBanner name={event.name} />}
       title="Enregistrez votre visite"
       subtitle={
         <p>
@@ -173,8 +198,8 @@ export default function IdentifyPage() {
           name="country"
           label="Pays du numéro"
           value={country}
-          onChange={(event) => {
-            const next = event.target.value as CountryCode
+          onChange={(changed) => {
+            const next = changed.target.value as CountryCode
             setCountry(next)
             setPhone((current) => cleanPhoneInput(current, next))
             setPhoneError(null)
@@ -192,8 +217,8 @@ export default function IdentifyPage() {
           autoComplete={country === 'OTHER' ? 'tel' : 'tel-national'}
           dialPrefix={country === 'OTHER' ? undefined : selected.dial}
           value={phone}
-          onChange={(event) => {
-            setPhone(cleanPhoneInput(event.target.value, country))
+          onChange={(changed) => {
+            setPhone(cleanPhoneInput(changed.target.value, country))
             if (phoneError) setPhoneError(null)
           }}
         />

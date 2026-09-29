@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\Ability;
+use App\Models\Event;
 use App\Models\Family;
 use App\Models\FamilyRotation;
 use App\Models\Member;
@@ -38,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
     public const MORPH_MAP = [
         'visitor' => Visitor::class,
         'visit' => Visit::class,
+        'event' => Event::class,
         'note' => VisitorNote::class,
         'member' => Member::class,
         'user' => User::class,

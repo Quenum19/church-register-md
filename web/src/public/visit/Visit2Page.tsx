@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { RETURN_REASON_LABELS, RETURN_REASONS, type ReturnReason } from '../../shared/domain'
+import { visitTitle } from '../ui/text'
 import { ChoiceGroup, ChoiceOption, TextArea } from './FormFields'
 import { visit2Schema, type Visit2Values } from './schemas'
 import { useVisitForm } from './useVisitForm'
@@ -19,7 +20,7 @@ function toRequest(v: Visit2Values) {
   }
 }
 
-/** 2e visite : le nom n'est ni redemandé ni affiché (aucune donnée personnelle ne vient du serveur). */
+/** Deuxième visite : le nom n'est ni redemandé ni affiché (aucune donnée personnelle ne vient du serveur). */
 export default function Visit2Page() {
   const [defaults] = useState<Visit2Values>(() => ({ return_reasons: [], return_reasons_other: '' }))
   const visit = useVisitForm<Visit2Values>({
@@ -38,7 +39,7 @@ export default function Visit2Page() {
   return (
     <VisitFormShell
       step={2}
-      title="Votre 2e visite"
+      title={visitTitle(2)}
       subtitle={<p>Ravis de vous revoir ! Dites-nous ce qui vous a donné envie de revenir.</p>}
       submitting={visit.submitting}
       hasDraft={visit.hasDraft}

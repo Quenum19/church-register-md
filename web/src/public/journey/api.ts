@@ -4,12 +4,16 @@ import { apiFetch } from '../../shared/http'
 import type {
   CreateVisitRequest,
   CreateVisitResponse,
+  IdentifyEventRequest,
   IdentifyRequest,
   IdentifyResponse,
   PublicConfig,
 } from '../../shared/api-types'
 
-export function postIdentify(body: IdentifyRequest, signal?: AbortSignal): Promise<IdentifyResponse> {
+export function postIdentify(
+  body: IdentifyRequest | IdentifyEventRequest,
+  signal?: AbortSignal,
+): Promise<IdentifyResponse> {
   return apiFetch<IdentifyResponse>('/api/public/identify', { method: 'POST', body, signal })
 }
 

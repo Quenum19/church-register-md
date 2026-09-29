@@ -38,7 +38,7 @@ describe('Identification', () => {
     expect(screen.getByText('+225 07 00 00 00 00')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: "Oui, c'est mon numéro" }))
 
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     expect(api.callsTo('POST', '/api/public/identify')[0].body).toEqual({ country: 'CI', phone: '0700000000' })
     expect(currentPath()).toBe('/visite/1')
   })
@@ -82,14 +82,14 @@ describe('Identification', () => {
     await user.type(input, '+44 7700 900000')
     await user.click(screen.getByRole('button', { name: 'Continuer' }))
     await user.click(await screen.findByRole('button', { name: "Oui, c'est mon numéro" }))
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     expect(api.callsTo('POST', '/api/public/identify')[0].body).toEqual({ country: 'OTHER', phone: '+447700900000' })
   })
 
   it.each([
-    [1, 'Votre 1re visite', '/visite/1'],
-    [2, 'Votre 2e visite', '/visite/2'],
-    [3, 'Votre 3e visite', '/visite/3'],
+    [1, 'Votre première visite', '/visite/1'],
+    [2, 'Votre deuxième visite', '/visite/2'],
+    [3, 'Votre troisième visite', '/visite/3'],
     ['complete', 'Merci pour votre fidélité !', '/parcours-complet'],
     ['done_today', 'Votre visite est déjà enregistrée', '/deja-enregistre'],
   ] as const)('route selon step = %s', async (step, title, path) => {
@@ -138,7 +138,7 @@ describe('Identification', () => {
     await identifyWith(user)
     expect(await screen.findByRole('alert')).toHaveTextContent('Connexion impossible')
     await user.click(screen.getByRole('button', { name: 'Réessayer' }))
-    await heading('Votre 2e visite')
+    await heading('Votre deuxième visite')
     expect(api.callsTo('POST', '/api/public/identify')).toHaveLength(2)
   })
 

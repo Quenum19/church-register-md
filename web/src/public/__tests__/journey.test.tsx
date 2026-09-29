@@ -30,7 +30,7 @@ describe('Garde d’accès aux étapes', () => {
   it('accès à une autre étape que celle du parcours → bonne étape', async () => {
     seedIdentified(1)
     renderPublic('/visite/3')
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     expect(currentPath()).toBe('/visite/1')
   })
 
@@ -76,7 +76,7 @@ describe('Persistance du parcours', () => {
     first.unmount()
 
     renderPublic('/visite/1')
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     expect(screen.getByLabelText('Nom et prénoms')).toHaveValue('Aya Konan')
     expect(screen.getByLabelText('Quartier')).toHaveValue('Niangon')
     expect(screen.getByRole('radio', { name: 'Autre' })).toBeChecked()
@@ -99,7 +99,7 @@ describe('Persistance du parcours', () => {
     await heading('Vos données personnelles')
     expect(screen.getByText(/24 mois après votre dernière visite/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Revenir à la page précédente' }))
-    await heading('Votre 1re visite')
+    await heading('Votre première visite')
     expect(screen.getByLabelText('Nom et prénoms')).toHaveValue('Aya Konan')
   })
 
@@ -108,7 +108,7 @@ describe('Persistance du parcours', () => {
     seedJourney({ result: { visitNumber: 2, family: { id: 4, name: 'Force' }, completed: false, name: null } })
     renderPublic('/merci')
     await heading('Ravis de vous revoir !')
-    expect(screen.getByText('Votre 2e visite est enregistrée')).toBeInTheDocument()
+    expect(screen.getByText('Votre deuxième visite est enregistrée')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Terminer' }))
     await heading('Enregistrez votre visite')
     expect(readJourney()).toBeNull()
@@ -121,7 +121,7 @@ describe('Retour à l’accueil', () => {
     const user = userEvent.setup({ delay: null })
     seedIdentified(2)
     renderPublic('/visite/2')
-    await heading('Votre 2e visite')
+    await heading('Votre deuxième visite')
     await user.click(screen.getByRole('button', { name: "Retour à l'accueil" }))
     await heading('Enregistrez votre visite')
     expect(readJourney()).toBeNull()
@@ -131,7 +131,7 @@ describe('Retour à l’accueil', () => {
     const user = userEvent.setup({ delay: null })
     seedIdentified(2)
     renderPublic('/visite/2')
-    await heading('Votre 2e visite')
+    await heading('Votre deuxième visite')
     await user.click(screen.getByRole('checkbox', { name: "L'accueil reçu" }))
     await user.click(screen.getByRole('button', { name: "Retour à l'accueil" }))
 
@@ -160,7 +160,7 @@ describe('Retour à l’accueil', () => {
       String(input).includes('/visits') ? pending : original(input, init)) as typeof fetch
 
     renderPublic('/visite/2')
-    await heading('Votre 2e visite')
+    await heading('Votre deuxième visite')
     await user.click(screen.getByRole('checkbox', { name: "L'accueil reçu" }))
     await user.click(screen.getByRole('button', { name: 'Enregistrer ma visite' }))
 

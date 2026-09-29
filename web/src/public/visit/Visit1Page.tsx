@@ -1,16 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Controller } from 'react-hook-form'
 import { Link } from 'react-router'
-import type { FamilyRef, Visit1Answers } from '../../shared/api-types'
-import { findCountry, SOURCE_LABELS, SOURCES, type CountryCode, type Source } from '../../shared/domain'
-import { loadPublicConfig } from '../journey/api'
+import type { Visit1Answers } from '../../shared/api-types'
+import { findCountry, SOURCES, type CountryCode, type Source } from '../../shared/domain'
 import { useJourneyStore } from '../journey/context'
 import { cleanPhoneInput, formatPhoneWithDial, phoneForApi, phoneHint } from '../journey/phone'
 import { focusRing, hintBase, labelBase } from '../ui/classes'
-import { CountrySelect, SelectField, TextField } from '../ui/Field'
-import { Checkbox, ChoiceGroup, ChoiceOption, TextArea } from './FormFields'
+import { CountrySelect, TextField } from '../ui/Field'
+import { visitTitle } from '../ui/text'
+import { Checkbox, ChoiceGroup, ChoiceOption } from './FormFields'
 import { visit1Schema, type Visit1Values, type WhatsappChoice } from './schemas'
+import { useFamilies } from './useFamilies'
+import { Visit1IdentityFields } from './Visit1Fields'
 import { useVisitForm } from './useVisitForm'
 import { VisitFormShell } from './VisitFormParts'
 
@@ -83,21 +85,7 @@ export default function Visit1Page() {
     wants_whatsapp_group: false,
     consent: false,
   }))
-  const [families, setFamilies] = useState<FamilyRef[]>([])
-
-  useEffect(() => {
-    let active = true
-    loadPublicConfig()
-      .then((config) => {
-        if (active && Array.isArray(config.families)) setFamilies(config.families)
-      })
-      .catch(() => {
-        // Liste facultative : sans elle, le champ « famille de l'invitant » est simplement masqué.
-      })
-    return () => {
-      active = false
-    }
-  }, [])
+  const families = useFamilies()
 
   const visit = useVisitForm<Visit1Values>({
     step: 1,
@@ -124,7 +112,6 @@ export default function Visit1Page() {
   })
   const { form, errorOf } = visit
   const { register, control, watch, setValue, getValues } = form
-  const source = watch('source')
   const whatsappChoice = watch('whatsapp_choice')
   const whatsappCountry = watch('whatsapp_country')
   const whatsappDial = findCountry(whatsappCountry).dial
@@ -151,7 +138,7 @@ export default function Visit1Page() {
   return (
     <VisitFormShell
       step={1}
-      title="Votre 1re visite"
+      title={visitTitle(1)}
       subtitle={<p>Ravis de vous accueillir ! Quelques informations pour mieux vous connaître.</p>}
       submitting={visit.submitting}
       hasDraft={visit.hasDraft}
@@ -160,100 +147,7 @@ export default function Visit1Page() {
       focusKey={visit.focusKey}
       submitError={visit.submitError}
     >
-      <TextField
-        id="full_name"
-        label="Nom et prénoms"
-        autoComplete="name"
-        autoCapitalize="words"
-        maxLength={100}
-        error={errorOf('full_name')}
-        {...register('full_name')}
-      />
-      <TextField
-        id="commune"
-        label="Commune de résidence"
-        hint="Par exemple : Cocody, Yopougon…"
-        autoComplete="address-level2"
-        maxLength={80}
-        error={errorOf('commune')}
-        {...register('commune')}
-      />
-      <TextField
-        id="quartier"
-        label="Quartier"
-        hint="Par exemple : Angré, Riviera 2…"
-        autoComplete="address-level3"
-        maxLength={80}
-        error={errorOf('quartier')}
-        {...register('quartier')}
-      />
-
-      <ChoiceGroup id="source" legend="Comment avez-vous connu l'Église ?" error={errorOf('source')}>
-        {SOURCES.map((value) => (
-          <ChoiceOption
-            key={value}
-            id={`source-${value}`}
-            type="radio"
-            value={value}
-            label={SOURCE_LABELS[value]}
-            invalid={Boolean(errorOf('source'))}
-            aria-describedby={errorOf('source') ? 'source-error' : undefined}
-            {...register('source')}
-          />
-        ))}
-      </ChoiceGroup>
-
-      {source === 'invite_membre' && (
-        <div className="flex flex-col gap-4 border-l-4 border-church-gold pl-4">
-          <TextField
-            id="invited_by"
-            label="Nom de la personne qui vous a invité(e)"
-            autoComplete="off"
-            maxLength={100}
-            error={errorOf('invited_by')}
-            {...register('invited_by')}
-          />
-          {families.length > 0 && (
-            <Controller
-              control={control}
-              name="inviter_family_id"
-              render={({ field }) => (
-                <SelectField
-                  id="inviter_family_id"
-                  label="Sa famille dans l'Église"
-                  optional
-                  error={errorOf('inviter_family_id')}
-                  name={field.name}
-                  ref={field.ref}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                >
-                  <option value="">Je ne sais pas</option>
-                  {families.map((family) => (
-                    <option key={family.id} value={String(family.id)}>
-                      Famille {family.name}
-                    </option>
-                  ))}
-                </SelectField>
-              )}
-            />
-          )}
-        </div>
-      )}
-
-      {source === 'autre' && (
-        <div className="border-l-4 border-church-gold pl-4">
-          <TextArea
-            id="source_other"
-            label="Précisez comment vous avez connu l'Église"
-            maxLength={200}
-            rows={2}
-            error={errorOf('source_other')}
-            {...register('source_other')}
-          />
-        </div>
-      )}
+      <Visit1IdentityFields form={form} errorOf={errorOf} sources={SOURCES} families={families} />
 
       <fieldset className="flex min-w-0 flex-col gap-4">
         {/* La légende d'un <fieldset> n'est pas un élément flex : le « gap » ne s'applique pas

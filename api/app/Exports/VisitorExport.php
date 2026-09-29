@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Enums\Source;
 use App\Enums\VisitorStatus;
+use App\Models\Event;
 use App\Models\Family;
 use App\Models\Visit;
 use App\Models\Visitor;
@@ -37,6 +38,8 @@ class VisitorExport
         "Familles d'accueil",
         'Source',
         'Invité(e) par',
+        // Événement d'origine de la 1re visite (culte spécial, évangélisation), vide sinon.
+        'Événement',
     ];
 
     /** Index de la colonne numérique « Nombre de visites ». */
@@ -75,6 +78,11 @@ class VisitorExport
             $filters[] = "Famille d'accueil : ".(is_string($name) ? $name : '#'.$query->familyId);
         }
 
+        if ($query->eventId !== null) {
+            $name = Event::query()->whereKey($query->eventId)->value('name');
+            $filters[] = 'Événement : '.(is_string($name) ? $name : '#'.$query->eventId);
+        }
+
         if ($query->from !== null && $query->to !== null) {
             $filters[] = '1re visite du '.$this->day($query->from).' au '.$this->day($query->to);
         } elseif ($query->from !== null) {
@@ -111,21 +119,30 @@ class VisitorExport
             $families[$family->id] = $family->name;
         }
 
+        // Les événements sont peu nombreux (un par culte spécial) : leur table entière tient en
+        // mémoire, comme celle des familles, et évite une jointure par bloc.
+        $events = [];
+
+        foreach (Event::query()->get(['id', 'name']) as $event) {
+            $events[$event->id] = $event->name;
+        }
+
         $visitors = $query->builder()
-            // Seules les colonnes utiles des visites (familles d'accueil), chargées par bloc.
-            ->with('visits:id,visitor_id,visit_number,family_id')
+            // Seules les colonnes utiles des visites (familles d'accueil, événement), par bloc.
+            ->with('visits:id,visitor_id,visit_number,family_id,event_id')
             ->lazy($this->chunkSize);
 
         foreach ($visitors as $visitor) {
-            yield $this->row($visitor, $families);
+            yield $this->row($visitor, $families, $events);
         }
     }
 
     /**
      * @param  array<int, string>  $families  noms des familles par identifiant
+     * @param  array<int, string>  $events  noms des événements par identifiant
      * @return list<int|string>
      */
-    private function row(Visitor $visitor, array $families): array
+    private function row(Visitor $visitor, array $families, array $events): array
     {
         $hostFamilies = $visitor->visits
             ->map(static fn (Visit $visit): ?string => $visit->family_id !== null ? ($families[$visit->family_id] ?? null) : null)
@@ -147,7 +164,21 @@ class VisitorExport
             implode(', ', $hostFamilies),
             $this->source($visitor),
             $visitor->invited_by ?? '',
+            $this->event($visitor, $events),
         ];
+    }
+
+    /**
+     * Événement d'origine : celui de la 1re visite (la seule faite depuis le lien dédié),
+     * chaîne vide pour une inscription par le lien ordinaire.
+     *
+     * @param  array<int, string>  $events
+     */
+    private function event(Visitor $visitor, array $events): string
+    {
+        $eventId = $visitor->visits->firstWhere('visit_number', 1)?->event_id;
+
+        return $eventId !== null ? ($events[$eventId] ?? '') : '';
     }
 
     private function status(VisitorStatus $status): string

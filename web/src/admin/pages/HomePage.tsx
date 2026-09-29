@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import { Link } from 'react-router'
 import type { Stats } from '../../shared/api-types'
-import { MONTH_LABELS, STATUS_LABELS, VISITOR_STATUSES, type VisitorStatus } from '../../shared/domain'
+import { MONTH_LABELS, VISITOR_STATUSES, type VisitorStatus } from '../../shared/domain'
 import { useStats } from '../api/stats'
 import { useAuth, useCan } from '../auth/context'
 import { Card } from '../components/Card'
@@ -9,6 +9,7 @@ import { PageHeader } from '../components/PageHeader'
 import { ErrorState, LoadingState } from '../components/States'
 import { linkClass } from '../components/styles'
 import { capitalize, formatMonth, formatNumber, todayParts } from '../lib/format'
+import { ADMIN_STATUS_LABELS } from '../lib/labels'
 
 const STATUS_BAR: Record<VisitorStatus, string> = {
   prospect: 'bg-blue-600',
@@ -18,9 +19,9 @@ const STATUS_BAR: Record<VisitorStatus, string> = {
 }
 
 const VISIT_SERIES = [
-  { key: 'v1', label: '1re visite', color: 'bg-church-purple' },
-  { key: 'v2', label: '2e visite', color: 'bg-church-gold' },
-  { key: 'v3', label: '3e visite', color: 'bg-green-600' },
+  { key: 'v1', label: 'Première visite', color: 'bg-church-purple' },
+  { key: 'v2', label: 'Deuxième visite', color: 'bg-church-gold' },
+  { key: 'v3', label: 'Troisième visite', color: 'bg-green-600' },
 ] as const
 
 const MONTH_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
@@ -36,7 +37,7 @@ function percent(value: number, total: number): number {
 function KeyFigures({ stats }: { stats: Stats }) {
   const figures = [
     { label: 'Total visiteurs', value: stats.total_visitors, hint: 'depuis le début' },
-    { label: 'Nouveaux aujourd’hui', value: stats.new_today, hint: '1re visite ce jour' },
+    { label: 'Nouveaux aujourd’hui', value: stats.new_today, hint: 'première visite ce jour' },
     { label: 'Visites ce mois-ci', value: stats.visits_this_month, hint: 'toutes visites confondues' },
     { label: 'Membres', value: stats.by_status.membre ?? 0, hint: 'visiteurs convertis' },
   ]
@@ -72,7 +73,7 @@ function StatusBreakdown({ stats }: { stats: Stats }) {
           return (
             <li key={status}>
               <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-                <span className="font-bold text-gray-900">{STATUS_LABELS[status]}</span>
+                <span className="font-bold text-gray-900">{ADMIN_STATUS_LABELS[status]}</span>
                 <span className="text-gray-800">
                   {formatNumber(count)} <span className="text-gray-600">({pct} %)</span>
                 </span>
@@ -136,7 +137,7 @@ function VisitsByFamily({ stats }: { stats: Stats }) {
                   <span className="text-gray-800">
                     {formatNumber(row.total)} visite{row.total > 1 ? 's' : ''}{' '}
                     <span className="text-gray-600">
-                      (1re : {row.v1} · 2e : {row.v2} · 3e : {row.v3})
+                      (Première : {row.v1} · Deuxième : {row.v2} · Troisième : {row.v3})
                     </span>
                   </span>
                 </div>

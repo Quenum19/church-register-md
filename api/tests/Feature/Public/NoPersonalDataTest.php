@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Event;
 use App\Models\Visitor;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
@@ -26,8 +27,24 @@ it('ne renvoie aucune donnée personnelle, quelle que soit la réponse publique'
     // Configuration.
     $check($this->getJson('/api/public/config')->assertOk());
 
-    // Identification (étape 1) puis visite 1 complète.
-    $token = $check($this->identify()->assertOk())->json('session_token');
+    // En-tête du lien dédié d'un événement (et lien inconnu / fermé).
+    Event::factory()->create(['name' => 'Culte spécial du 4 octobre', 'slug' => 'culte-4-octobre']);
+    Event::factory()->inactive()->create(['slug' => 'culte-ferme']);
+    $check($this->getJson('/api/public/events/culte-4-octobre')->assertOk());
+    $check($this->getJson('/api/public/events/culte-ferme')->assertNotFound());
+    $check($this->getJson('/api/public/events/culte-inconnu')->assertNotFound());
+
+    // Identification (étape 1) puis visite 1 complète, par le lien dédié de l'événement.
+    $token = $check($this->postJson('/api/public/identify', [
+        'country' => 'CI',
+        'phone' => $this->phone,
+        'event' => 'culte-4-octobre',
+    ])->assertOk())->json('session_token');
+    $check($this->postJson('/api/public/identify', [
+        'country' => 'CI',
+        'phone' => '01 02 03 04 05',
+        'event' => 'culte-ferme',
+    ])->assertUnprocessable());
     $key = (string) Str::uuid();
 
     $check($this->postVisit($token, $this->visit1Answers([

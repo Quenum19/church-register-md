@@ -23,12 +23,20 @@
 */
 
 use App\Http\Controllers\Public\ConfigController;
+use App\Http\Controllers\Public\EventController;
 use App\Http\Controllers\Public\IdentifyController;
 use App\Http\Controllers\Public\StoreVisitController;
+use App\Models\Event;
 use App\Support\RateLimits;
 use Illuminate\Support\Facades\Route;
 
 Route::get('config', ConfigController::class)->name('config');
+
+// En-tête du lien dédié d'un événement : { slug, name, event_date }. Un slug hors du format du
+// contrat ne correspond à aucune route et reçoit la même 404 `not_found` qu'un slug inconnu.
+Route::get('events/{slug}', EventController::class)
+    ->where('slug', '[a-z0-9-]{1,'.Event::SLUG_MAX_LENGTH.'}')
+    ->name('events.show');
 
 Route::post('identify', IdentifyController::class)
     ->middleware('throttle:'.RateLimits::IDENTIFY)

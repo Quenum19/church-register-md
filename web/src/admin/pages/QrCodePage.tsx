@@ -1,55 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
-import type { Settings } from '../../shared/api-types'
 import { useSettings } from '../api/settings'
 import { useCan } from '../auth/context'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { Icon } from '../components/Icon'
 import { PageHeader } from '../components/PageHeader'
-import { QrCode } from '../components/QrCode'
+import { PosterPreview } from '../components/PosterPreview'
 import { ErrorState, LoadingState } from '../components/States'
 import { useToast } from '../components/toast/context'
 import { buttonClass, linkClass } from '../components/styles'
-import { useQrMatrix, type QrMatrix } from '../hooks/useQrMatrix'
+import { useQrMatrix } from '../hooks/useQrMatrix'
 import { downloadBlob, renderPosterPng } from '../lib/poster'
-import './qrcode-print.css'
-
-function Poster({ settings, matrix }: { settings: Settings; matrix: QrMatrix | null }) {
-  return (
-    <article
-      id="qr-poster"
-      aria-label="Aperçu de l’affiche"
-      className="mx-auto w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl"
-    >
-      <div aria-hidden="true" className="h-2.5 bg-linear-to-r from-church-gold-dk via-church-gold-lt to-church-gold-dk" />
-      <header className="bg-linear-to-br from-church-purple-dk via-church-purple to-church-purple-dk px-8 py-8 text-center text-white">
-        <p className="font-display text-2xl font-bold leading-tight">{settings.church_name}</p>
-        <div aria-hidden="true" className="mx-auto my-3 h-0.5 w-20 bg-church-gold" />
-        <p className="text-sm italic text-purple-100">Bienvenue parmi nous</p>
-      </header>
-      <div className="px-8 py-6 text-center">
-        <p className="text-lg font-bold text-church-purple-dk">Scannez pour enregistrer votre visite</p>
-        <p className="mt-1 text-sm text-gray-700">Ouvrez l’appareil photo de votre téléphone et visez le code.</p>
-        <div className="mx-auto mt-5 w-64 max-w-full rounded-2xl border-2 border-church-purple-xl bg-white p-2">
-          {matrix ? (
-            <QrCode matrix={matrix} label={`QR code vers ${settings.public_url}`} />
-          ) : (
-            <div className="grid aspect-square place-items-center text-sm text-gray-700">Génération…</div>
-          )}
-        </div>
-      </div>
-      {settings.verse.text && (
-        <blockquote className="border-t-2 border-church-purple-xl px-8 py-6 text-center">
-          <p className="italic leading-relaxed text-gray-700">« {settings.verse.text} »</p>
-          <footer className="mt-2 text-sm font-bold text-church-gold-dk">— {settings.verse.ref}</footer>
-        </blockquote>
-      )}
-      <p className="px-8 pb-4 text-center text-xs text-gray-600">{settings.public_url}</p>
-      <div aria-hidden="true" className="h-2.5 bg-linear-to-r from-church-gold-dk via-church-gold-lt to-church-gold-dk" />
-    </article>
-  )
-}
 
 export function QrCodePage() {
   const settings = useSettings()
@@ -58,14 +20,6 @@ export function QrCodePage() {
   const publicUrl = settings.data?.public_url ?? null
   const qr = useQrMatrix(publicUrl)
   const [downloading, setDownloading] = useState(false)
-
-  // Active la feuille d'impression dédiée tant que cette page est affichée.
-  useEffect(() => {
-    document.documentElement.dataset.printPoster = ''
-    return () => {
-      delete document.documentElement.dataset.printPoster
-    }
-  }, [])
 
   const download = async () => {
     if (!settings.data || !qr.matrix) return
@@ -106,7 +60,12 @@ export function QrCodePage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <Poster settings={settings.data} matrix={qr.matrix} />
+          <PosterPreview
+            churchName={settings.data.church_name}
+            verse={settings.data.verse}
+            url={settings.data.public_url}
+            matrix={qr.matrix}
+          />
           <div className="flex flex-col gap-6 print:hidden">
             <Card title="Actions">
               <div className="flex flex-col gap-2">

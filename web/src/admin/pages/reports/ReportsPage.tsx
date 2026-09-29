@@ -32,9 +32,9 @@ function ReportTable({ reports }: { reports: ReportSummary[] }) {
           <tr>
             <th scope="col" className={tableHeadClass}>Mois</th>
             <th scope="col" className={tableHeadClass}>Famille de service</th>
-            <th scope="col" className={clsx(tableHeadClass, 'text-right')}>1re visite</th>
-            <th scope="col" className={clsx(tableHeadClass, 'text-right')}>2e visite</th>
-            <th scope="col" className={clsx(tableHeadClass, 'text-right')}>3e visite</th>
+            <th scope="col" className={clsx(tableHeadClass, 'text-right')}>Première visite</th>
+            <th scope="col" className={clsx(tableHeadClass, 'text-right')}>Deuxième visite</th>
+            <th scope="col" className={clsx(tableHeadClass, 'text-right')}>Troisième visite</th>
             <th scope="col" className={clsx(tableHeadClass, 'text-right')}>Total</th>
             <th scope="col" className={clsx(tableHeadClass, 'text-right')}>Conversions</th>
             <th scope="col" className={tableHeadClass}>Envoi</th>
@@ -78,7 +78,7 @@ function ReportCards({ reports }: { reports: ReportSummary[] }) {
           </div>
           <p className="mt-1 text-sm text-gray-800">Famille : {r.family?.name ?? 'non définie'}</p>
           <p className="mt-2 text-sm text-gray-900">
-            {r.counts.total} visite{r.counts.total > 1 ? 's' : ''} (1re : {r.counts.v1} · 2e : {r.counts.v2} · 3e : {r.counts.v3})
+            {r.counts.total} visite{r.counts.total > 1 ? 's' : ''} (Première : {r.counts.v1} · Deuxième : {r.counts.v2} · Troisième : {r.counts.v3})
             · {r.counts.conversions} conversion{r.counts.conversions > 1 ? 's' : ''}
           </p>
         </li>

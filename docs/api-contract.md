@@ -54,6 +54,40 @@ Ancre historique : novembre 2025 = Puissance, puis une famille par mois dans cet
 ### Statuts visiteur
 `prospect` (1 visite) → `recurrent` (2) → `membre_potentiel` (3) → `membre` (converti par un super_admin).
 
+**Libellés (identiques partout : dashboard, exports CSV/XLSX/PDF, e-mails de rapport)** — jamais
+d'abréviation (« 1re visite ») ni de vocabulaire commercial (« Prospect », « Récurrent ») :
+
+| Valeur | Libellé |
+|---|---|
+| `prospect` | Première visite |
+| `recurrent` | Deuxième visite |
+| `membre_potentiel` | Membre potentiel |
+| `membre` | Membre |
+
+Les compteurs par numéro de visite des rapports emploient les mêmes mots :
+« Première visite », « Deuxième visite », « Troisième visite »
+(source unique côté serveur : `App\Enums\VisitorStatus::VISIT_LABELS` et `::visitLabel()`).
+
+### Événements (cultes spéciaux, évangélisations)
+Un événement porte un **lien public dédié** `{public_url}/e/{slug}`. Une personne qui s'inscrit par
+ce lien entre dans le **parcours normal** (c'est sa 1re visite, puis 2e et 3e lors des cultes
+ordinaires) : seule la visite enregistrée depuis le lien porte `event_id`, mémorisé pour le suivi.
+
+Table `events` : `id`, `name` (≤120), `slug` (≤60, unique, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+`event_date` (DATE nullable), `active` (booléen, défaut `true`), `created_by` (users, `nullOnDelete`),
+timestamps. Table `visits` : colonne `event_id` nullable (FK `events`, `nullOnDelete`) + index.
+Alias morph `event` (journal d'audit).
+
+Objet `Event` :
+```json
+{ "id": 1, "name": "Culte spécial du 4 octobre", "slug": "culte-4-octobre", "event_date": "2026-10-04",
+  "active": true, "url": "https://registre.exemple.org/e/culte-4-octobre",
+  "visits_count": 12, "visitors_count": 11, "created_at": "…" }
+```
+`url` = `{public_url des paramètres}/e/{slug}` ; `visits_count` = visites rattachées,
+`visitors_count` = personnes distinctes. Le QR code du lien est généré côté client depuis `url`.
+Référence courte (fiche visiteur) : `{ id, name, slug }`.
+
 ### Sources (visite 1) — `source`
 `invite_membre` (Invité(e) par un membre), `saint_esprit` (Saint-Esprit), `reseaux_sociaux` (Réseaux sociaux),
 `affiche_tract` (Affiche / tract), `bouche_a_oreille` (Bouche-à-oreille), `passage` (Passage devant l'église), `autre` (Autre).
@@ -79,6 +113,7 @@ Ancre historique : novembre 2025 = Puissance, puis une famille par mois dans cet
 | `reports.send` | | | ✓ |
 | `recipients.manage` | | | ✓ |
 | `rotations.manage` | | | ✓ |
+| `events.manage` (créer, modifier, supprimer un événement) | | | ✓ |
 | `settings.update` (verset, nom, URL publique) | | | ✓ |
 | `users.manage` | | | ✓ |
 | `audit.view` | | | ✓ |
@@ -121,6 +156,17 @@ Cache 60 s. Réponse 200 :
 ```
 `current_family` peut être `null` si aucune rotation n'est définie pour le mois.
 
+### GET `/api/public/events/{slug}`
+En-tête du lien dédié d'un événement, pour que le SPA puisse l'annoncer avant l'identification.
+Réponse 200 :
+```json
+{ "slug": "culte-4-octobre", "name": "Culte spécial du 4 octobre", "event_date": "2026-10-04" }
+```
+`event_date` peut être `null`. **Aucune donnée personnelle, aucun compteur, aucun cookie.**
+Slug inconnu, événement désactivé ou slug hors format → **404 `not_found`**, message générique
+(un lien fermé ne se distingue pas d'un lien inventé). Mêmes limites que les autres routes
+publiques (300 requêtes/min par IP) : aucune limite dédiée.
+
 ### POST `/api/public/identify`
 Limites supplémentaires :
 - **5 jetons/heure par numéro** normalisé (clé = hash du numéro). Seules les identifications qui
@@ -134,8 +180,11 @@ Limites supplémentaires :
 Les réponses de cette route ne portent **aucun en-tête `X-RateLimit-*`** (ils renseigneraient
 l'attaquant sur l'état exact des compteurs) ; seul `Retry-After` accompagne une 429.
 
-Requête : `{ "country": "CI", "phone": "07 00 00 00 00" }`
-Réponse 200 (même forme dans tous les cas) :
+Requête : `{ "country": "CI", "phone": "07 00 00 00 00", "event": "culte-4-octobre" }`
+`event` est **facultatif** : slug (≤60) du lien dédié d'un événement. Slug hors format, inconnu ou
+désactivé → **422 sur `event`** (message unique, aucun jeton émis, quota du numéro intact).
+Absent, `null` ou `""` = lien ordinaire.
+Réponse 200 (même forme dans tous les cas, avec ou sans `event`) :
 ```json
 { "step": 1, "session_token": "…", "expires_in": 900 }
 ```
@@ -147,6 +196,9 @@ Réponse 200 (même forme dans tous les cas) :
   Atténuation : limites de débit ; seule une vérification OTP le supprimerait (hors périmètre v2).
 - Jeton de parcours : chaîne opaque chiffrée + signée (APP_KEY) contenant
   `{ phone_e164, country, step, jti, exp }`, validité 15 min, à usage unique.
+  Avec un `event` valide, le jeton porte en plus `event_id` (l'identifiant, jamais le slug) ;
+  sans événement, son contenu est **inchangé** (les jetons émis avant la mise en service des
+  événements restent lisibles pendant un déploiement).
 
 ### POST `/api/public/visits`
 Requête :
@@ -166,6 +218,12 @@ Ordre de traitement (obligatoire) :
 4. Insertion de la visite ; index uniques `(visitor_id, visit_date)` → 409 `already_today`
    et `(visitor_id, visit_number)`.
 5. Mise à jour du statut, marquage du jeton comme consommé.
+
+La visite créée porte l'`event_id` du jeton (`null` sans événement). Un événement **supprimé**
+entre l'identification et l'envoi (possible tant qu'aucune visite n'y est rattachée) donne une
+visite sans événement plutôt qu'une erreur ; un événement seulement **désactivé** reste mémorisé.
+La réponse est inchangée. **Les règles de validation des `answers` ne changent pas** : le
+formulaire allégé d'un culte spécial n'est qu'une variante d'affichage côté SPA.
 
 `answers` selon l'étape du jeton :
 
@@ -294,15 +352,17 @@ Cache de 5 min : une visite enregistrée peut apparaître avec ce délai.
 ```json
 { "source": "invite_membre", "source_other": null, "invited_by": "…", "inviter_family": { "id": 1, "name": "…" },
   "wants_whatsapp_group": false, "consent_at": "…",
-  "visits": [ { "id": 1, "visit_number": 1, "visit_date": "2026-09-20", "family": { "id": 4, "name": "Force" }, "answers": {} } ],
+  "visits": [ { "id": 1, "visit_number": 1, "visit_date": "2026-09-20", "family": { "id": 4, "name": "Force" },
+               "event": { "id": 1, "name": "Culte spécial du 4 octobre", "slug": "culte-4-octobre" }, "answers": {} } ],
   "notes": [ { "id": 1, "body": "…", "author": { "id": 2, "name": "…" }, "created_at": "…", "can_delete": true } ],
   "member": { "converted_at": "…", "converted_by": { "id": 1, "name": "…" } } }
 ```
 `member` = `null` si non converti. `answers` contient les réponses de l'étape (objet vide pour la visite 1).
+`visits[].event` = `{ id, name, slug }` de l'événement d'origine, ou `null` (lien ordinaire).
 
 | Méthode | Route | Ability | Détails |
 |---|---|---|---|
-| GET | `/api/admin/visitors` | view | filtres combinables (ET) : `search` (≤100, LIKE paramétré sur nom, commune, quartier, téléphone), `status` ∈ enum ∪ {`non_membre`}, `family_id` (a au moins une visite accueillie par cette famille), `from`/`to` (`YYYY-MM-DD`, sur la date de 1re visite), `sort` ∈ {`-created_at` (défaut), `created_at`, `full_name`, `-last_visit_date`} ; paginé |
+| GET | `/api/admin/visitors` | view | filtres combinables (ET) : `search` (≤100, LIKE paramétré sur nom, commune, quartier, téléphone), `status` ∈ enum ∪ {`non_membre`}, `family_id` (a au moins une visite accueillie par cette famille), `event_id` (a au moins une visite rattachée à cet événement), `from`/`to` (`YYYY-MM-DD`, sur la date de 1re visite), `sort` ∈ {`-created_at` (défaut), `created_at`, `full_name`, `-last_visit_date`} ; paginé. `family_id` / `event_id` inconnus → 422 |
 | GET | `/api/admin/visitors/{id}` | view | `{ data: VisitorDetail }` |
 | PATCH | `/api/admin/visitors/{id}` | update | `{ full_name?, whatsapp? ({country,number}|null), commune?, quartier?, invited_by?, wants_whatsapp_group? }` → `{ data: VisitorDetail }` |
 | DELETE | `/api/admin/visitors/{id}` | delete | 204 (supprime visites, notes, membre en cascade) |
@@ -319,6 +379,13 @@ cellules commençant par `= + - @ \t \r` préfixées d'une apostrophe. XLSX : to
 (aucune formule possible), sans préfixe. PDF : > 1 000 lignes → 422 `too_many_rows` (limite de dompdf sur
 un hébergement mutualisé ; message invitant à utiliser CSV/Excel). Chaque export est journalisé avec
 `meta = { filters (sans le texte recherché), rows }`. Identifiants non numériques → 404.
+
+Colonnes des trois formats, dans cet ordre : `Nom`, `Téléphone`, `WhatsApp`, `Commune`, `Quartier`,
+`Statut`, `Nombre de visites`, `1re visite`, `Dernière visite`, `Familles d'accueil`, `Source`,
+`Invité(e) par`, **`Événement`** (nom de l'événement de la 1re visite, vide pour un parcours
+ordinaire). La colonne `Statut` emploie les libellés en toutes lettres (§1).
+La ligne « Filtres » des documents PDF et Excel cite le filtre `event_id`
+(« Événement : Culte spécial du 4 octobre »), comme `family_id` et les dates.
 
 ### Rapports mensuels
 Un rapport = (année, mois) pour la famille de service de ce mois (`family_rotations`), calculé à la volée.
@@ -354,6 +421,23 @@ unicité (family_id, email) vérifiée aussi côté application (MariaDB ne l'im
 écrit vers une adresse arbitraire) ; 503 `mail_failed`. Chaque envoi écrit `report.test_sent` dans `audit_logs`
 (`meta.email` = destinataire). Adresses enregistrées en minuscules ; `active` vaut `true` par défaut.
 
+### Événements (cultes spéciaux, évangélisations)
+`routes/api/events.php` — même préfixe et mêmes middlewares que `admin.php`.
+Objet `Event` : voir §1.
+
+| Méthode | Route | Ability | Détails |
+|---|---|---|---|
+| GET | `/api/admin/events` | `visitors.view` | `{ data: [Event] }`, triés par `event_date` décroissante (sans date en dernier) puis par nom |
+| POST | `/api/admin/events` | `events.manage` | `{ name, slug, event_date\|null, active }` → 201 `{ data: Event }` ; slug déjà pris ou hors format → 422 sur `slug` |
+| PATCH | `/api/admin/events/{id}` | `events.manage` | `{ name?, slug?, event_date?, active? }` (le **nom et le slug** sont modifiables) → `{ data: Event }` ; slug pris par un autre événement → 422 |
+| DELETE | `/api/admin/events/{id}` | `events.manage` | 204 ; **409 `event_has_visits`** si des visites y sont rattachées (message invitant à désactiver plutôt qu'à supprimer) |
+
+`events.manage` est réservée au **super_admin** ; la lecture reste ouverte à `visitors.view`
+(le lien et son QR code servent à tout le dashboard). Identifiants non numériques → 404.
+`event_date` accepte `null` (événement sans date arrêtée) ; `active` vaut `true` par défaut.
+Désactiver un événement ferme son lien public (404) sans rien perdre du suivi.
+Journal d'audit : `event.created`, `event.updated`, `event.deleted`.
+
 ### Rotation des familles
 `GET /api/admin/families` (view) → `{ data: [ { id, name, active, position } ] }`
 `GET /api/admin/rotations?from=2026-01&months=12` (view, `months` 1–36) → `{ data: [ { year, month, family: {id,name}|null } ] }`
@@ -382,7 +466,7 @@ Désactivation → toutes les sessions du compte sont supprimées **et ses liens
 
 ### Journal d'audit — GET `/api/admin/audit-logs` (`audit.view`)
 Filtres `action`, `user_id`, paginé (plus récent d'abord). Item : `{ id, action, user: {id,name}|null, subject_type, subject_id, ip, created_at, meta }`.
-`subject_type` est un alias court (morph map imposée) : `visitor`, `visit`, `note`, `member`, `user`, `family`, `rotation`, `recipient`, `report`, ou `null`
+`subject_type` est un alias court (morph map imposée) : `visitor`, `visit`, `event`, `note`, `member`, `user`, `family`, `rotation`, `recipient`, `report`, ou `null`
 (`settings.updated` n'a pas de sujet : les champs modifiés sont dans `meta.fields`).
 `meta` ne contient jamais de mot de passe, jeton ni donnée personnelle de visiteur (seulement ids et champs modifiés).
 Actions : `auth.login`, `auth.login_failed`, `auth.account_locked`, `auth.logout`, `auth.password_changed`,
@@ -390,12 +474,16 @@ Actions : `auth.login`, `auth.login_failed`, `auth.account_locked`, `auth.logout
 `visitor.updated`, `visitor.deleted`, `visitor.converted`, `visitor.unconverted`, `note.created`, `note.deleted`,
 `user.created`, `user.updated`, `user.deleted`, `settings.updated`, `rotation.updated`, `recipient.created`,
 `recipient.updated`, `recipient.deleted`, `report.sent`, `report.test_sent`, `export.csv`, `export.xlsx`, `export.pdf`,
+`event.created`, `event.updated`, `event.deleted`,
 `visitors.purged` et `audit_logs.purged` (commande de rétention, sans utilisateur, `meta.count`).
 - `auth.login_failed` : un échec d'identifiants ou de code 2FA. `user_id` = le compte visé quand l'adresse
   correspond à un compte éligible, sinon `null` ; `meta.stage` = `password` | `two_factor`. Ni mot de passe,
   ni code, ni adresse saisie ne sont journalisés.
 - `auth.account_locked` : `meta.scope` = `ip` (cette IP écartée 15 min) | `account` (verrouillage global),
   `meta.minutes` = 15.
+- `event.created` / `event.deleted` : `meta.slug` (et `meta.active` à la création) ;
+  `event.updated` : `meta.fields` (noms des champs modifiés), `meta.slug`, `meta.previous_slug`.
+  Le slug est public : le journaliser permet de retrouver quel lien a circulé.
 - Ces deux actions écrivent une **IP tronquée** (`203.0.x.x`, `2001:db8:…`) : l'appelant n'est pas
   authentifié, son adresse complète n'a pas à être conservée. Les autres actions gardent l'IP entière.
 Exception assumée : `user.deleted` conserve en `meta` l'e-mail et le rôle de l'administrateur supprimé (donnée d'administration, traçabilité) ;
@@ -406,7 +494,7 @@ Exception assumée : `user.deleted` conserve en `meta` l'e-mail et le rôle de l
 - `GET /api/health` → 200 `{ "status": "ok", "db": "ok" }`, sans session ; **60 requêtes/min par IP**
   (la sonde interroge la base : sans limite, elle sert de levier d'épuisement des connexions).
 - SPA : le build de `web/` est copié dans `api/public/` ; `index.html` y est renommé `spa.html`.
-  Toute route GET non-API, non-fichier (`/`, `/visite/…`, `/admin/…`, `/qrcode`) renvoie `spa.html`
+  Toute route GET non-API, non-fichier (`/`, `/visite/…`, `/e/…`, `/admin/…`, `/qrcode`) renvoie `spa.html`
   via la route de repli Laravel (en-tête `Cache-Control: no-cache`), ce qui applique aussi les en-têtes de sécurité.
 - En-têtes (middleware global) : CSP `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
   img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self';

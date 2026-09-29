@@ -8,7 +8,7 @@ interface ShellProps {
   /** Titre de la page : unique <h1>, repris dans le titre de l'onglet. */
   title: string
   subtitle?: ReactNode
-  /** Numéro de visite affiché en badge (1re / 2e / 3e visite). */
+  /** Numéro de visite affiché en badge (Première / Deuxième / Troisième visite). */
   visit?: 1 | 2 | 3
   /** Grand logo centré (accueil, pages de fin). */
   hero?: boolean

@@ -40,46 +40,54 @@ function issueAdder(ctx: { addIssue: (issue: { code: 'custom'; message: string; 
 
 /* ─── Visite 1 ───────────────────────────────────────────────────── */
 
+/** Champs d'identité et d'origine, identiques dans les deux variantes de la visite 1. */
+const identityShape = {
+  full_name: requiredText(100, 'Indiquez votre nom et vos prénoms.', 'Le nom ne doit pas dépasser 100 caractères.'),
+  commune: requiredText(80, 'Indiquez votre commune.', 'La commune ne doit pas dépasser 80 caractères.'),
+  quartier: requiredText(80, 'Indiquez votre quartier.', 'Le quartier ne doit pas dépasser 80 caractères.'),
+  source_other: z.string(),
+  invited_by: z.string(),
+  inviter_family_id: z.string(),
+  consent: z.boolean().check(z.refine((v) => v, 'Votre accord est nécessaire pour enregistrer votre visite.')),
+}
+
+/** Précisions exigées par l'origine choisie (mêmes messages dans les deux variantes). */
+function checkIdentity(v: { source: string; invited_by: string; source_other: string }, add: AddIssue) {
+  if (v.source === 'invite_membre') {
+    checkConditionalText(
+      v.invited_by,
+      100,
+      'invited_by',
+      'Indiquez le nom de la personne qui vous a invité(e).',
+      'Le nom ne doit pas dépasser 100 caractères.',
+      add,
+    )
+  }
+  if (v.source === 'autre') {
+    checkConditionalText(
+      v.source_other,
+      200,
+      'source_other',
+      "Précisez comment vous avez connu l'Église.",
+      'La précision ne doit pas dépasser 200 caractères.',
+      add,
+    )
+  }
+}
+
 export const visit1Schema = z
   .object({
-    full_name: requiredText(100, 'Indiquez votre nom et vos prénoms.', 'Le nom ne doit pas dépasser 100 caractères.'),
-    commune: requiredText(80, 'Indiquez votre commune.', 'La commune ne doit pas dépasser 80 caractères.'),
-    quartier: requiredText(80, 'Indiquez votre quartier.', 'Le quartier ne doit pas dépasser 80 caractères.'),
+    ...identityShape,
     source: oneOf(SOURCES, "Indiquez comment vous avez connu l'Église."),
-    source_other: z.string(),
-    invited_by: z.string(),
-    inviter_family_id: z.string(),
     whatsapp_choice: z.enum(WHATSAPP_CHOICES),
     whatsapp_country: z.enum(COUNTRY_CODES),
     whatsapp_number: z.string(),
     wants_whatsapp_group: z.boolean(),
-    consent: z
-      .boolean()
-      .check(z.refine((v) => v, 'Votre accord est nécessaire pour enregistrer votre visite.')),
   })
   .check(
     z.superRefine((v, ctx) => {
       const add = issueAdder(ctx)
-      if (v.source === 'invite_membre') {
-        checkConditionalText(
-          v.invited_by,
-          100,
-          'invited_by',
-          'Indiquez le nom de la personne qui vous a invité(e).',
-          'Le nom ne doit pas dépasser 100 caractères.',
-          add,
-        )
-      }
-      if (v.source === 'autre') {
-        checkConditionalText(
-          v.source_other,
-          200,
-          'source_other',
-          "Précisez comment vous avez connu l'Église.",
-          'La précision ne doit pas dépasser 200 caractères.',
-          add,
-        )
-      }
+      checkIdentity(v, add)
       // « same » : rien à valider, le serveur reprend le numéro identifié.
       if (v.whatsapp_choice === 'other') {
         if (v.whatsapp_number.trim()) {
@@ -99,6 +107,38 @@ export const visit1Schema = z
   )
 
 export type Visit1Values = z.output<typeof visit1Schema>
+
+/* ─── Visite 1, variante « événement » ───────────────────────────── */
+
+/** Un lien de culte spécial ne propose que deux origines. */
+export const EVENT_SOURCES = ['invite_membre', 'autre'] as const
+
+/**
+ * Formulaire allégé des cultes spéciaux : deux origines, une seule case WhatsApp
+ * (« rejoindre le groupe ») et un numéro WhatsApp facultatif. Sans ce numéro, c'est
+ * celui de l'accueil qui est utilisé — le contrat §2 ne change pas, seul l'écran change.
+ */
+export const visit1EventSchema = z
+  .object({
+    ...identityShape,
+    source: oneOf(EVENT_SOURCES, "Indiquez comment vous avez connu l'Église."),
+    whatsapp_country: z.enum(COUNTRY_CODES),
+    whatsapp_number: z.string(),
+    wants_whatsapp_group: z.boolean(),
+  })
+  .check(
+    z.superRefine((v, ctx) => {
+      const add = issueAdder(ctx)
+      checkIdentity(v, add)
+      // Le numéro est facultatif : on ne le valide que s'il est saisi et visible.
+      if (v.wants_whatsapp_group && v.whatsapp_number.trim()) {
+        const error = validatePhone(v.whatsapp_number, v.whatsapp_country, 'whatsapp')
+        if (error) add('whatsapp_number', error)
+      }
+    }),
+  )
+
+export type Visit1EventValues = z.output<typeof visit1EventSchema>
 
 /* ─── Visite 2 ───────────────────────────────────────────────────── */
 

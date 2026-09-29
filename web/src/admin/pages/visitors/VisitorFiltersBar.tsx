@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import type { VisitorFilters } from '../../../shared/api-types'
+import { useEvents } from '../../api/events'
 import { useFamilies } from '../../api/settings'
 import { Button } from '../../components/Button'
 import { Field } from '../../components/Field'
@@ -14,7 +15,9 @@ const searchSchema = z.object({
   search: z.string().trim().max(100, 'La recherche ne doit pas dépasser 100 caractères.'),
 })
 
-export type FilterChange = Partial<Record<'search' | 'status' | 'family_id' | 'from' | 'to' | 'sort', string | undefined>>
+export type FilterChange = Partial<
+  Record<'search' | 'status' | 'family_id' | 'event_id' | 'from' | 'to' | 'sort', string | undefined>
+>
 
 interface VisitorFiltersBarProps {
   filters: VisitorFilters
@@ -26,6 +29,7 @@ interface VisitorFiltersBarProps {
 /** Filtres combinables (ET). La recherche est validée à l'envoi ; les listes et dates s'appliquent au changement. */
 export function VisitorFiltersBar({ filters, onChange, onReset, invalidPeriod }: VisitorFiltersBarProps) {
   const families = useFamilies()
+  const events = useEvents()
   const {
     register,
     handleSubmit,
@@ -58,7 +62,7 @@ export function VisitorFiltersBar({ filters, onChange, onReset, invalidPeriod }:
         </Button>
       </form>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Field label="Statut">
           {(control) => (
             <select
@@ -97,7 +101,28 @@ export function VisitorFiltersBar({ filters, onChange, onReset, invalidPeriod }:
             </select>
           )}
         </Field>
-        <Field label="1re visite du" error={invalidPeriod ? 'La date de début doit précéder la date de fin.' : undefined}>
+        <Field label="Événement">
+          {(control) => (
+            <select
+              {...control}
+              value={filters.event_id ? String(filters.event_id) : ''}
+              onChange={(e) => onChange({ event_id: e.target.value || undefined })}
+              className={inputClass}
+            >
+              <option value="">Tous les événements</option>
+              {events.data?.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.name}
+                </option>
+              ))}
+              {/* Événement présent dans l'URL mais pas encore chargé : on garde la valeur sélectionnée. */}
+              {filters.event_id && !events.data?.some((e) => e.id === filters.event_id) && (
+                <option value={filters.event_id}>Événement n° {filters.event_id}</option>
+              )}
+            </select>
+          )}
+        </Field>
+        <Field label="Première visite du" error={invalidPeriod ? 'La date de début doit précéder la date de fin.' : undefined}>
           {(control) => (
             <input
               {...control}

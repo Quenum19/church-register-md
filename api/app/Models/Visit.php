@@ -17,11 +17,13 @@ use Illuminate\Support\Carbon;
  * @property int $visit_number
  * @property Carbon $visit_date
  * @property int|null $family_id
+ * @property int|null $event_id événement d'origine (lien dédié), null pour le lien ordinaire
  * @property array<string, mixed> $answers objet JSON ({} pour la visite 1)
  * @property string $idempotency_key
  * @property Carbon|null $created_at
  * @property-read Visitor $visitor
  * @property-read Family|null $family
+ * @property-read Event|null $event
  */
 class Visit extends Model
 {
@@ -41,6 +43,7 @@ class Visit extends Model
         'visit_number',
         'visit_date',
         'family_id',
+        'event_id',
         'answers',
         'idempotency_key',
     ];
@@ -55,6 +58,7 @@ class Visit extends Model
             'visit_number' => 'integer',
             'visit_date' => 'date',
             'family_id' => 'integer',
+            'event_id' => 'integer',
             'answers' => JsonObject::class,
         ];
     }
@@ -73,5 +77,15 @@ class Visit extends Model
     public function family(): BelongsTo
     {
         return $this->belongsTo(Family::class);
+    }
+
+    /**
+     * Événement d'origine de la visite (culte spécial, évangélisation), ou null.
+     *
+     * @return BelongsTo<Event, $this>
+     */
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class);
     }
 }

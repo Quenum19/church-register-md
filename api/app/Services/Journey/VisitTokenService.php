@@ -37,8 +37,12 @@ class VisitTokenService
 
     /**
      * Émet un jeton pour l'étape `$step` (1, 2 ou 3) du numéro `$phoneE164`.
+     *
+     * `$eventId` (lien dédié d'un événement) n'est ajouté au contenu chiffré QUE s'il est
+     * renseigné : un parcours ordinaire produit exactement le même jeton qu'avant, et les
+     * jetons déjà en circulation au moment du déploiement restent lisibles.
      */
-    public function issue(string $phoneE164, PhoneCountry $country, int $step): string
+    public function issue(string $phoneE164, PhoneCountry $country, int $step, ?int $eventId = null): string
     {
         if (! in_array($step, [1, 2, 3], true)) {
             throw new InvalidArgumentException('Étape de parcours invalide.');
@@ -51,6 +55,10 @@ class VisitTokenService
             'jti' => bin2hex(random_bytes(16)),
             'exp' => CarbonImmutable::now()->getTimestamp() + self::TTL_SECONDS,
         ];
+
+        if ($eventId !== null) {
+            $payload['event_id'] = $eventId;
+        }
 
         return $this->encrypter->encryptString(json_encode($payload, JSON_THROW_ON_ERROR));
     }
@@ -115,14 +123,17 @@ class VisitTokenService
         $step = $data['step'] ?? null;
         $jti = $data['jti'] ?? null;
         $exp = $data['exp'] ?? null;
+        // Absent des jetons ordinaires (et de ceux émis avant la mise en service des événements).
+        $eventId = $data['event_id'] ?? null;
 
         $valid = is_string($phone) && preg_match('/^\+[1-9][0-9]{6,14}$/', $phone) === 1
             && $country !== null
             && is_int($step) && in_array($step, [1, 2, 3], true)
             && is_string($jti) && preg_match('/^[0-9a-f]{32}$/', $jti) === 1
-            && is_int($exp);
+            && is_int($exp)
+            && ($eventId === null || (is_int($eventId) && $eventId > 0));
 
-        return $valid ? new VisitToken($phone, $country, $step, $jti, $exp) : null;
+        return $valid ? new VisitToken($phone, $country, $step, $jti, $exp, $eventId) : null;
     }
 
     private function consumedKey(VisitToken $token): string

@@ -66,7 +66,7 @@ Famille {{ $familyName }} : {{ $counts['total'] }} visite(s), {{ $counts['conver
 
     {{-- Conversions --}}
     <h2 style="margin:0 0 8px; font-size:17px; line-height:24px; color:#4a0e6b;">Conversions ({{ count($conversions) }})</h2>
-    <p style="margin:0 0 8px; font-size:13px; line-height:18px; color:#4b5563;">Membres convertis ce mois-ci dont la 1re visite a été accueillie par cette famille.</p>
+    <p style="margin:0 0 8px; font-size:13px; line-height:18px; color:#4b5563;">Membres convertis ce mois-ci dont la première visite a été accueillie par cette famille.</p>
     @if (count($conversions) === 0)
         <p style="margin:0 0 24px; color:#374151;">Aucune conversion ce mois-ci.</p>
     @else

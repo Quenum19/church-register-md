@@ -21,6 +21,7 @@ enum Ability: string
     case ReportsSend = 'reports.send';
     case RecipientsManage = 'recipients.manage';
     case RotationsManage = 'rotations.manage';
+    case EventsManage = 'events.manage';
     case SettingsUpdate = 'settings.update';
     case UsersManage = 'users.manage';
     case AuditView = 'audit.view';
@@ -38,6 +39,7 @@ enum Ability: string
             self::ReportsSend => 'Envoyer les rapports',
             self::RecipientsManage => 'Gérer les destinataires des rapports',
             self::RotationsManage => 'Gérer la rotation des familles',
+            self::EventsManage => 'Gérer les événements (cultes spéciaux, évangélisations)',
             self::SettingsUpdate => 'Modifier les paramètres',
             self::UsersManage => 'Gérer les administrateurs',
             self::AuditView => "Consulter le journal d'audit",

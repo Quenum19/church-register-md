@@ -20,6 +20,12 @@ it('accorde à chaque rôle exactement les abilities du contrat', function (Role
     'super_admin' => [Role::SuperAdmin, Ability::values()],
 ]);
 
+it('réserve la gestion des événements au super_admin', function (): void {
+    expect(Gate::forUser(User::factory()->superAdmin()->create())->allows(Ability::EventsManage->value))->toBeTrue()
+        ->and(Gate::forUser(User::factory()->moderateur()->create())->allows(Ability::EventsManage->value))->toBeFalse()
+        ->and(Gate::forUser(User::factory()->lecteur()->create())->allows(Ability::EventsManage->value))->toBeFalse();
+});
+
 it('refuse tout à un compte désactivé', function (): void {
     $user = User::factory()->superAdmin()->inactive()->create();
 

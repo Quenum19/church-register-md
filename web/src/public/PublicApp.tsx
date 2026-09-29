@@ -1,12 +1,13 @@
 // Parcours visiteur public (monté sous « /* » par main.tsx).
 // Bundle initial : accueil/identification et état du parcours.
 // Chargés à la demande : formulaires et pages de fin (préchargés depuis l'accueil),
-// /qrcode, /confidentialite, 404.
+// la variante « événement » (/e/:slug), /qrcode, /confidentialite, 404.
 
 import { lazy, Suspense, useState, type ComponentType } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { PageLoader } from '../shared/PageLoader'
 import { JourneyContext, useJourneyStore } from './journey/context'
+import { guardVisit } from './journey/flow'
 import { createJourneyStore, type VisitStep } from './journey/store'
 import IdentifyPage from './pages/IdentifyPage'
 import { LoadErrorBoundary } from './ui/LoadErrorBoundary'
@@ -35,6 +36,9 @@ const AlreadyTodayPage = lazyWithRetry(() => loadEndPages().then((m) => ({ defau
 const PrivacyPage = lazyWithRetry(() => import('./pages/PrivacyPage'))
 const QrCodePage = lazyWithRetry(() => import('./qrcode/QrCodePage'))
 const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'))
+// Variante « événement » (/e/:slug) : jamais dans le bundle initial ni préchargée,
+// elle n'est téléchargée que par les visiteurs qui ouvrent un lien de culte spécial.
+const EventRoutes = lazyWithRetry(() => import('./event/EventRoutes'))
 
 /**
  * Garde d'accès aux formulaires, évaluée à l'arrivée sur la page : sans parcours en cours
@@ -43,11 +47,7 @@ const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'))
  */
 function VisitRoute({ step }: { step: VisitStep }) {
   const store = useJourneyStore()
-  const [target] = useState<string | null>(() => {
-    const { identified, step: current } = store.getState()
-    if (!identified || current === null) return '/'
-    return current === step ? null : `/visite/${current}`
-  })
+  const [target] = useState<string | null>(() => guardVisit(store.getState(), step))
   if (target) return <Navigate to={target} replace />
   const Page = VISIT_PAGES[step]
   return <Page />
@@ -62,6 +62,7 @@ export default function PublicApp() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route index element={<IdentifyPage />} />
+            <Route path="e/:slug/*" element={<EventRoutes />} />
             <Route path="visite/1" element={<VisitRoute key={1} step={1} />} />
             <Route path="visite/2" element={<VisitRoute key={2} step={2} />} />
             <Route path="visite/3" element={<VisitRoute key={3} step={3} />} />

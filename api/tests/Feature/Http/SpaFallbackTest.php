@@ -28,7 +28,11 @@ it('renvoie spa.html pour les routes du SPA', function (string $uri): void {
 
     expect($response->headers->get('Cache-Control'))->toContain('no-cache')
         ->and($response->baseResponse->getFile()->getFilename())->toBe('spa.html');
-})->with(['/', '/visite/1', '/visite/merci', '/admin', '/admin/visiteurs/12', '/qrcode', '/Admin/Connexion']);
+})->with([
+    '/', '/visite/1', '/visite/merci', '/admin', '/admin/visiteurs/12', '/qrcode', '/Admin/Connexion',
+    // Lien dédié d'un événement (culte spécial, évangélisation) : page du SPA.
+    '/e/culte-4-octobre', '/admin/evenements',
+]);
 
 it('répond 404 aux fichiers, chemins cachés et dossiers de l\'application', function (string $uri): void {
     buildSpa($this->publicPath);

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { VISIT_REASON_LABELS, VISIT_REASONS, type VisitReason } from '../../shared/domain'
+import { visitTitle } from '../ui/text'
 import { ChoiceGroup, ChoiceOption, TextArea } from './FormFields'
 import { visit3Schema, type Visit3Values } from './schemas'
 import { useVisitForm } from './useVisitForm'
@@ -19,7 +20,7 @@ function toRequest(v: Visit3Values) {
   }
 }
 
-/** 3e visite : le nom n'est ni redemandé ni affiché (aucune donnée personnelle ne vient du serveur). */
+/** Troisième visite : le nom n'est ni redemandé ni affiché (aucune donnée personnelle ne vient du serveur). */
 export default function Visit3Page() {
   const [defaults] = useState<Visit3Values>(() => ({ visit_reason: '', visit_reason_other: '' }))
   const visit = useVisitForm<Visit3Values>({
@@ -39,7 +40,7 @@ export default function Visit3Page() {
   return (
     <VisitFormShell
       step={3}
-      title="Votre 3e visite"
+      title={visitTitle(3)}
       subtitle={<p>Votre fidélité nous touche ! Une dernière question pour mieux vous accompagner.</p>}
       submitting={visit.submitting}
       hasDraft={visit.hasDraft}

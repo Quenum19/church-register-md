@@ -1,12 +1,14 @@
 <?php
 
 use App\Enums\Source;
+use App\Enums\VisitorStatus;
 use App\Exceptions\ApiException;
 use App\Exports\ExportLogo;
 use App\Exports\PdfVisitorExport;
 use App\Exports\VisitorExport;
 use App\Exports\XlsxVisitorExport;
 use App\Models\AuditLog;
+use App\Models\Event;
 use App\Models\User;
 use App\Models\Visitor;
 use App\Queries\VisitorListQuery;
@@ -141,8 +143,8 @@ describe('CSV', function (): void {
 
         expect(exportCsvRows($response))->toBe([
             VisitorExport::HEADINGS,
-            ['Awa Koné', "'+225 07 00 00 00 01", "'+33 6 12 34 56 78", 'Cocody', 'Angré', 'Récurrent', '2',
-                '02/08/2026', '06/09/2026', 'Sagesse, Force', 'Invité(e) par un membre', 'Marie K.'],
+            ['Awa Koné', "'+225 07 00 00 00 01", "'+33 6 12 34 56 78", 'Cocody', 'Angré', 'Deuxième visite', '2',
+                '02/08/2026', '06/09/2026', 'Sagesse, Force', 'Invité(e) par un membre', 'Marie K.', ''],
         ]);
     });
 
@@ -305,7 +307,7 @@ describe('XLSX', function (): void {
             ->and(AuditLog::query()->sole()->action)->toBe('export.xlsx');
     });
 
-    it('fixe une largeur pour chacune des douze colonnes (plus aucun intitulé tronqué)', function (): void {
+    it('fixe une largeur pour chacune des treize colonnes (plus aucun intitulé tronqué)', function (): void {
         AdminFixtures::visitor(['2026-09-01'], ['full_name' => 'Awa Koné']);
 
         $sheet = (string) exportXlsxEntry($this->get('/api/admin/exports/visitors.xlsx'), 'xl/worksheets/sheet1.xml');
@@ -369,19 +371,19 @@ describe('XLSX', function (): void {
 
         expect($rows[1][0])->toBe($church)
             ->and($rows[2][0])->toContain(VisitorExport::SUBTITLE)->toContain('1 visiteur')
-            ->and($rows[3][0])->toContain('Statut : Prospect')
+            ->and($rows[3][0])->toContain('Statut : Première visite')
             ->and($rows[3][0])->toContain('Recherche : active (texte non reproduit)')
             // Le texte recherché n'apparaît que dans les données, jamais dans la ligne de filtres.
             ->and($rows[3][0])->not->toContain('Cocody')
             ->and($rows[$notice][0])->toBe(VisitorExport::CONFIDENTIALITY);
 
-        // Titres et mention finale fusionnés sur les douze colonnes.
-        expect($sheet)->toContain('<mergeCell ref="A1:L1"/>')
-            ->toContain('<mergeCell ref="A3:L3"/>')
-            ->toContain('<mergeCell ref="A'.$notice.':L'.$notice.'"/>')
+        // Titres et mention finale fusionnés sur les treize colonnes.
+        expect($sheet)->toContain('<mergeCell ref="A1:M1"/>')
+            ->toContain('<mergeCell ref="A3:M3"/>')
+            ->toContain('<mergeCell ref="A'.$notice.':M'.$notice.'"/>')
             // Volets figés sous l'en-tête et filtre automatique sur le tableau.
             ->toContain('state="frozen"')
-            ->toContain('<autoFilter ref="A'.XlsxVisitorExport::HEADING_ROW.':L'.$lastData.'"/>');
+            ->toContain('<autoFilter ref="A'.XlsxVisitorExport::HEADING_ROW.':M'.$lastData.'"/>');
     });
 
     it('reste un classeur valide quand aucun visiteur ne correspond', function (): void {
@@ -396,7 +398,7 @@ describe('XLSX', function (): void {
             ->and(array_values($rows[$heading]))->toBe(VisitorExport::HEADINGS)
             ->and($rows[$heading + 2][0])->toBe(VisitorExport::CONFIDENTIALITY)
             // Le filtre automatique se réduit à la ligne d'en-tête, sans plage invalide.
-            ->and($sheet)->toContain('<autoFilter ref="A'.$heading.':L'.$heading.'"/>');
+            ->and($sheet)->toContain('<autoFilter ref="A'.$heading.':M'.$heading.'"/>');
     });
 });
 
@@ -490,10 +492,13 @@ describe('PDF', function (): void {
     it('décrit les filtres appliqués en toutes lettres', function (): void {
         AdminFixtures::visitor(['2026-09-01'], ['full_name' => 'Awa Koné']);
 
+        $event = Event::factory()->create(['name' => 'Culte spécial du 4 octobre', 'slug' => 'culte-4-octobre']);
+
         $filters = app(VisitorExport::class)->describeFilters(new VisitorListQuery(
             search: 'Awa',
             status: VisitorListQuery::STATUS_NON_MEMBER,
             familyId: $this->families['Force']->id,
+            eventId: $event->id,
             from: '2026-01-01',
             to: '2026-09-30',
         ));
@@ -501,6 +506,7 @@ describe('PDF', function (): void {
         expect($filters)->toBe([
             'Statut : tous sauf les membres',
             "Famille d'accueil : Force",
+            'Événement : Culte spécial du 4 octobre',
             '1re visite du 01/01/2026 au 30/09/2026',
             'Recherche : active (texte non reproduit)',
         ]);
@@ -546,7 +552,7 @@ describe('PDF', function (): void {
         }
     });
 
-    it('dimensionne les douze colonnes pour tenir en A4 paysage', function (): void {
+    it('dimensionne les treize colonnes pour tenir en A4 paysage', function (): void {
         AdminFixtures::visitor(['2026-09-01'], ['full_name' => 'Awa Koné']);
 
         expect(PdfVisitorExport::COLUMN_WIDTHS)->toHaveCount(count(VisitorExport::HEADINGS))
@@ -662,5 +668,114 @@ describe('cohérence des trois formats', function (): void {
         expect($csv)->toBe(VisitorExport::HEADINGS)
             ->and($xlsx)->toBe(VisitorExport::HEADINGS)
             ->and($pdf)->toBe(VisitorExport::HEADINGS);
+    });
+});
+
+/**
+ * Texte du PDF avec les blancs normalisés : dompdf coupe les cellules étroites en plusieurs
+ * lignes (« Culte\nspécial du 4\noctobre »), toujours sur une espace.
+ */
+function exportPdfText(string $pdf): string
+{
+    return (string) preg_replace('/\s+/u', ' ', implode(' ', exportPdfPages($pdf)));
+}
+
+describe('colonne « Événement »', function (): void {
+    beforeEach(function (): void {
+        $this->event = Event::factory()->create([
+            'name' => 'Culte spécial du 4 octobre',
+            'slug' => 'culte-4-octobre',
+            'event_date' => '2026-10-04',
+        ]);
+
+        // Awa : venue par le lien de l'événement (1re visite), revenue au culte ordinaire.
+        $this->awa = AdminFixtures::visitor(['2026-08-02', '2026-09-06'], ['full_name' => 'Awa Koné']);
+        $this->awa->visits()->where('visit_number', 1)->update(['event_id' => $this->event->id]);
+
+        // Yao : parcours ordinaire, aucune colonne « Événement ».
+        $this->yao = AdminFixtures::visitor(['2026-09-01'], ['full_name' => 'Yao Traoré']);
+    });
+
+    it('cite l\'événement de la 1re visite en CSV, et rien pour un parcours ordinaire', function (): void {
+        $rows = exportCsvRows($this->get('/api/admin/exports/visitors.csv?sort=full_name')->assertOk());
+        $column = array_search('Événement', VisitorExport::HEADINGS, true);
+
+        expect($column)->toBe(count(VisitorExport::HEADINGS) - 1)
+            ->and($rows[0][$column])->toBe('Événement')
+            ->and($rows[1][0])->toBe('Awa Koné')
+            ->and($rows[1][$column])->toBe('Culte spécial du 4 octobre')
+            ->and($rows[2][0])->toBe('Yao Traoré')
+            ->and($rows[2][$column])->toBe('');
+    });
+
+    it('cite l\'événement de la 1re visite en Excel', function (): void {
+        $sheet = (string) exportXlsxEntry($this->get('/api/admin/exports/visitors.xlsx?sort=full_name'), 'xl/worksheets/sheet1.xml');
+        $rows = exportXlsxRows($sheet);
+        $heading = XlsxVisitorExport::HEADING_ROW;
+        $column = (int) array_search('Événement', VisitorExport::HEADINGS, true);
+
+        expect($rows[$heading][$column])->toBe('Événement')
+            ->and($rows[$heading + 1][$column])->toBe('Culte spécial du 4 octobre')
+            // Cellule vide (EmptyCell stylée) pour le parcours ordinaire.
+            ->and($rows[$heading + 2][$column] ?? '')->toBe('');
+    });
+
+    it('cite l\'événement de la 1re visite dans le PDF', function (): void {
+        $html = app(PdfVisitorExport::class)->html(new VisitorListQuery(sort: 'full_name'), 2);
+
+        expect($html)->toContain('Événement')
+            ->toContain('Culte spécial du 4 octobre');
+
+        $text = exportPdfText((string) $this->get('/api/admin/exports/visitors.pdf?sort=full_name')->getContent());
+
+        expect($text)->toContain('Événement')->toContain('Culte spécial du 4 octobre');
+    });
+
+    it('filtre les trois exports sur event_id et cite le filtre dans le document', function (): void {
+        $query = 'event_id='.$this->event->id;
+
+        $rows = exportCsvRows($this->get('/api/admin/exports/visitors.csv?'.$query)->assertOk());
+
+        expect($rows)->toHaveCount(2)
+            ->and($rows[1][0])->toBe('Awa Koné');
+
+        // Mêmes lignes que la liste admin, journal d'audit renseigné.
+        expect(collect($this->getJson('/api/admin/visitors?'.$query)->json('data'))->pluck('full_name')->all())
+            ->toBe(['Awa Koné'])
+            ->and(AuditLog::query()->sole()->meta['filters'])
+            ->toBe(['event_id' => $this->event->id, 'sort' => '-created_at']);
+
+        $sheet = (string) exportXlsxEntry($this->get('/api/admin/exports/visitors.xlsx?'.$query), 'xl/worksheets/sheet1.xml');
+
+        expect(exportXlsxRows($sheet)[3][0])->toContain('Événement : Culte spécial du 4 octobre');
+
+        $text = exportPdfText((string) $this->get('/api/admin/exports/visitors.pdf?'.$query)->getContent());
+
+        expect($text)->toContain('Événement : Culte spécial du 4 octobre')
+            ->not->toContain('Yao Traoré');
+    });
+
+    it('rejette un event_id inconnu (422) sur la liste et les trois exports', function (string $path): void {
+        $this->getJson($path.'?event_id=999999')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['event_id']);
+    })->with([
+        '/api/admin/visitors',
+        '/api/admin/exports/visitors.csv',
+        '/api/admin/exports/visitors.xlsx',
+        '/api/admin/exports/visitors.pdf',
+    ]);
+
+    it('écrit les libellés de statut en toutes lettres, identiques à l\'enum', function (): void {
+        AdminFixtures::visitor(['2026-06-07', '2026-06-14', '2026-07-05'], ['full_name' => 'Zara Diallo']);
+
+        $rows = exportCsvRows($this->get('/api/admin/exports/visitors.csv?sort=full_name')->assertOk());
+        $column = (int) array_search('Statut', VisitorExport::HEADINGS, true);
+
+        expect(array_column(array_slice($rows, 1), $column))->toBe([
+            VisitorStatus::Recurrent->label(),
+            VisitorStatus::Prospect->label(),
+            VisitorStatus::MembrePotentiel->label(),
+        ])->toBe(['Deuxième visite', 'Première visite', 'Membre potentiel']);
     });
 });

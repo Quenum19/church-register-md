@@ -2,6 +2,7 @@
 
 use App\Enums\Source;
 use App\Models\AuditLog;
+use App\Models\Event;
 use App\Models\Member;
 use App\Models\User;
 use App\Models\Visit;
@@ -66,9 +67,10 @@ describe('GET /visitors/{id}', function (): void {
             'consent_at' => '2026-08-02T09:30:00+00:00',
             'visits' => [
                 ['id' => $visit1->id, 'visit_number' => 1, 'visit_date' => '2026-08-02',
-                    'family' => ['id' => $this->families['Sagesse']->id, 'name' => 'Sagesse'], 'answers' => []],
+                    'family' => ['id' => $this->families['Sagesse']->id, 'name' => 'Sagesse'],
+                    'event' => null, 'answers' => []],
                 ['id' => $visit2->id, 'visit_number' => 2, 'visit_date' => '2026-09-06',
-                    'family' => ['id' => $this->families['Force']->id, 'name' => 'Force'],
+                    'family' => ['id' => $this->families['Force']->id, 'name' => 'Force'], 'event' => null,
                     'answers' => ['return_reasons' => ['enseignement', 'accueil'], 'return_reasons_other' => null]],
             ],
             'notes' => [
@@ -138,8 +140,30 @@ describe('GET /visitors/{id}', function (): void {
         DB::enableQueryLog();
         $this->getJson("/api/admin/visitors/{$visitor->id}")->assertOk();
 
-        // visiteur + famille de l'invitant + visites + familles + notes + auteurs + membre + auteur de la conversion
-        expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(8);
+        // visiteur + famille de l'invitant + visites + familles + événements + notes + auteurs
+        // + membre + auteur de la conversion
+        expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(9);
+    });
+
+    it('cite l\'événement d\'origine de chaque visite, ou null', function (): void {
+        $event = Event::factory()->create([
+            'name' => 'Culte spécial du 4 octobre',
+            'slug' => 'culte-4-octobre',
+        ]);
+
+        $visitor = AdminFixtures::visitor(['2026-09-06', '2026-09-13']);
+        $visitor->visits()->where('visit_number', 1)->update(['event_id' => $event->id]);
+
+        $visits = $this->actingAs($this->moderator)
+            ->getJson("/api/admin/visitors/{$visitor->id}")
+            ->assertOk()
+            ->json('data.visits');
+
+        expect($visits[0]['event'])->toBe([
+            'id' => $event->id,
+            'name' => 'Culte spécial du 4 octobre',
+            'slug' => 'culte-4-octobre',
+        ])->and($visits[1]['event'])->toBeNull();
     });
 });
 

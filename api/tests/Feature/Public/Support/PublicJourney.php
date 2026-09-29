@@ -192,6 +192,7 @@ trait PublicJourney
             $allowed = match (true) {
                 array_key_exists('step', $json) => ['step', 'session_token', 'expires_in'],
                 array_key_exists('visit_number', $json) => ['visit_number', 'family', 'completed'],
+                array_key_exists('slug', $json) => ['slug', 'name', 'event_date'],
                 default => ['church_name', 'public_url', 'verse', 'current_family', 'families'],
             };
 

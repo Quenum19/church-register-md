@@ -71,14 +71,21 @@ export function CheckboxField({ label, hint, children }: CheckboxFieldProps) {
 }
 
 /** Erreur globale d'un formulaire (annoncée immédiatement). */
-export function FormAlert({ message, tone = 'error' }: { message: ReactNode | null | undefined; tone?: 'error' | 'success' | 'info' }) {
+export function FormAlert({
+  message,
+  tone = 'error',
+}: {
+  message: ReactNode | null | undefined
+  tone?: 'error' | 'warning' | 'success' | 'info'
+}) {
   if (!message) return null
   return (
     <div
-      role={tone === 'error' ? 'alert' : 'status'}
+      role={tone === 'error' || tone === 'warning' ? 'alert' : 'status'}
       className={clsx(
         'rounded-lg border px-4 py-3 text-sm',
         tone === 'error' && 'border-red-300 bg-red-50 text-red-800',
+        tone === 'warning' && 'border-amber-400 bg-amber-50 text-amber-900',
         tone === 'success' && 'border-green-300 bg-green-50 text-green-900',
         tone === 'info' && 'border-church-purple/30 bg-church-purple-xl text-church-purple-dk',
       )}

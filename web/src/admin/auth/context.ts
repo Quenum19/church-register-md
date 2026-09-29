@@ -31,7 +31,13 @@ export function useAuth(): AuthContextValue {
   return value
 }
 
+/**
+ * Abilities reconnues par le dashboard : celles du contrat (`Ability`, partagé avec le
+ * parcours public) et `events.manage`, ajoutée avec les événements (super administrateur).
+ */
+export type AdminAbility = Ability | 'events.manage'
+
 /** Autorisation basée sur les abilities renvoyées par le serveur (jamais sur le rôle en dur). */
-export function useCan(ability: Ability): boolean {
-  return useAuth().abilities.has(ability)
+export function useCan(ability: AdminAbility): boolean {
+  return (useAuth().abilities as ReadonlySet<string>).has(ability)
 }

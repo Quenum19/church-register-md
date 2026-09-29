@@ -54,8 +54,12 @@ describe('MonthlyReportMail', function (): void {
             ->toContain('Famille de service : <strong>Sagesse</strong>')
             ->toContain('>2</p>')   // total
             ->toContain(PhoneNumberService::formatInternational('+2250700000001'))
-            ->toContain('1re visite')
-            ->toContain('2e visite')
+            // Libellés en toutes lettres, identiques au dashboard et aux exports.
+            ->toContain('Première visite')
+            ->toContain('Deuxième visite')
+            ->toContain('Troisième visite')
+            ->not->toContain('1re visite')
+            ->not->toContain('2e visite')
             ->toContain('02/08/2026')
             ->toContain('09/08/2026')
             ->toContain('20/08/2026')

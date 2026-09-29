@@ -3,13 +3,14 @@
 
 import type { VisitorFilters, VisitorSort } from '../../shared/api-types'
 import { buildQuery } from '../../shared/http'
-import { STATUS_LABELS, VISITOR_STATUSES, type VisitorStatus } from '../../shared/domain'
+import type { VisitorStatus } from '../../shared/domain'
+import { STATUS_OPTIONS } from './labels'
 
 export type StatusFilter = VisitorStatus | 'non_membre'
 
 export const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: 'non_membre', label: 'Tous sauf membres' },
-  ...VISITOR_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] })),
+  ...STATUS_OPTIONS,
 ]
 
 export const SORT_OPTIONS: { value: VisitorSort; label: string }[] = [
@@ -43,6 +44,8 @@ export function parseVisitorFilters(params: URLSearchParams): VisitorFilters {
   if (status && STATUS_FILTER_OPTIONS.some((o) => o.value === status)) filters.status = status as StatusFilter
   const family = parsePositiveInt(params.get('family_id'))
   if (family) filters.family_id = family
+  const event = parsePositiveInt(params.get('event_id'))
+  if (event) filters.event_id = event
   const from = params.get('from')
   if (from && DATE.test(from)) filters.from = from
   const to = params.get('to')
@@ -69,7 +72,7 @@ export function withFilters(params: URLSearchParams, changes: Partial<Record<Fil
 }
 
 export function hasActiveFilters(filters: VisitorFilters): boolean {
-  return Boolean(filters.search || filters.status || filters.family_id || filters.from || filters.to)
+  return Boolean(filters.search || filters.status || filters.family_id || filters.event_id || filters.from || filters.to)
 }
 
 export function isInvalidPeriod(filters: VisitorFilters): boolean {
@@ -82,6 +85,7 @@ export function toApiQuery(filters: VisitorFilters): Record<string, string | num
     search: filters.search,
     status: filters.status,
     family_id: filters.family_id,
+    event_id: filters.event_id,
     from: filters.from,
     to: filters.to,
     sort: filters.sort ?? DEFAULT_SORT,
@@ -100,6 +104,7 @@ export function exportUrl(format: ExportFormat, filters: VisitorFilters): string
     search: filters.search,
     status: filters.status,
     family_id: filters.family_id,
+    event_id: filters.event_id,
     from: filters.from,
     to: filters.to,
     sort: filters.sort,

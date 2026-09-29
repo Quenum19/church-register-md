@@ -18,7 +18,7 @@ it('expose exactement les valeurs du contrat d\'API', function (): void {
         ->and(Ability::values())->toBe([
             'visitors.view', 'visitors.update', 'notes.create', 'visitors.convert', 'visitors.unconvert',
             'visitors.delete', 'visitors.export', 'reports.send', 'recipients.manage', 'rotations.manage',
-            'settings.update', 'users.manage', 'audit.view',
+            'events.manage', 'settings.update', 'users.manage', 'audit.view',
         ]);
 });
 
@@ -28,6 +28,22 @@ it('fournit un libellé français pour chaque valeur', function (): void {
         ->and(VisitReason::NouveauResident->label())->toBe('Nouveau résident dans la ville')
         ->and(Role::SuperAdmin->label())->toBe('Super administrateur')
         ->and(VisitorStatus::MembrePotentiel->label())->toBe('Membre potentiel');
+});
+
+it('écrit les libellés de statut en toutes lettres, identiques aux libellés de visite', function (): void {
+    expect(VisitorStatus::options())->toBe([
+        'prospect' => 'Première visite',
+        'recurrent' => 'Deuxième visite',
+        'membre_potentiel' => 'Membre potentiel',
+        'membre' => 'Membre',
+    ])
+        // Un seul jeu de mots : le dashboard, les exports et les rapports puisent ici.
+        ->and(VisitorStatus::visitLabel(1))->toBe(VisitorStatus::Prospect->label())
+        ->and(VisitorStatus::visitLabel(2))->toBe(VisitorStatus::Recurrent->label())
+        ->and(VisitorStatus::visitLabel(3))->toBe('Troisième visite')
+        // Plus aucun libellé abrégé ni « Prospect » / « Récurrent ».
+        ->and(array_values(VisitorStatus::options()))->each->not->toContain('1re')
+        ->and(VisitorStatus::options())->not->toContain('Prospect')->not->toContain('Récurrent');
 });
 
 it('attribue les abilities du contrat à chaque rôle', function (): void {

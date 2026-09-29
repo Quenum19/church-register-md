@@ -13,9 +13,10 @@ import { ErrorState, LoadingState } from '../../components/States'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useToast } from '../../components/toast/context'
 import { linkClass } from '../../components/styles'
-import { describeAnswers, ordinal } from '../../lib/answers'
+import { describeAnswers } from '../../lib/answers'
 import { errorMessage, isApiError } from '../../lib/errors'
 import { formatDate, formatDateTime } from '../../lib/format'
+import { visitLabel } from '../../lib/labels'
 import { readBackState, type BackState } from '../../lib/paths'
 import { formatPhone, whatsappLink } from '../../lib/phone'
 import { parsePositiveInt } from '../../lib/visitorFilters'
@@ -104,7 +105,7 @@ function VisitorActions({ visitor, back }: { visitor: VisitorDetail; back: BackS
       </div>
       {!isMember && canConvert && !eligible && (
         <p id="conversion-hint" className="text-sm text-gray-700 sm:basis-full sm:text-right">
-          Conversion possible après la 3e visite (statut « Membre potentiel »).
+          Conversion possible après la troisième visite (statut « Membre potentiel »).
         </p>
       )}
 
@@ -205,11 +206,16 @@ function Visits({ visitor }: { visitor: VisitorDetail }) {
                   {visit.visit_number}
                 </span>
                 <h3 className="font-bold text-gray-900">
-                  {ordinal(visit.visit_number)} visite · <time dateTime={visit.visit_date}>{formatDate(visit.visit_date)}</time>
+                  {visitLabel(visit.visit_number)} · <time dateTime={visit.visit_date}>{formatDate(visit.visit_date)}</time>
                 </h3>
                 <p className="text-sm text-gray-700">
                   Famille d’accueil : <span className="font-bold text-gray-900">{visit.family?.name ?? 'non définie'}</span>
                 </p>
+                {visit.event && (
+                  <p className="text-sm text-gray-700">
+                    Inscrit lors de : <span className="font-bold text-gray-900">{visit.event.name}</span>
+                  </p>
+                )}
                 {answers.length > 0 && (
                   <dl className="mt-2 flex flex-col gap-1 text-sm">
                     {answers.map((a) => (

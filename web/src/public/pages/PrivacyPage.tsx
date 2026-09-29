@@ -61,7 +61,7 @@ export default function PrivacyPage() {
           </p>
           <p>
             Elles sont traitées avec votre <strong>consentement</strong>, donné en cochant la case prévue lors de votre
-            1re visite. Fréquenter une Église peut révéler des convictions religieuses, qui sont des données sensibles
+            première visite. Fréquenter une Église peut révéler des convictions religieuses, qui sont des données sensibles
             au sens de la loi n° 2013-450 et du Règlement général sur la protection des données (RGPD) : c'est pourquoi
             votre accord explicite est demandé.
           </p>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
             <li>vos nom et prénoms, votre commune et votre quartier ;</li>
             <li>votre numéro WhatsApp et votre souhait de rejoindre le groupe WhatsApp (facultatifs) ;</li>
             <li>la façon dont vous avez connu l'Église et, le cas échéant, le nom et la famille de la personne qui vous a invité(e) ;</li>
-            <li>vos réponses aux questions des 2e et 3e visites ;</li>
+            <li>vos réponses aux questions des deuxième et troisième visites ;</li>
             <li>les dates de vos visites, la famille qui vous a accueilli(e) et la date de votre consentement.</li>
           </ul>
         </Section>
