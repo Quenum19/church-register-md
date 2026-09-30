@@ -21,11 +21,19 @@
 
 use App\Enums\Ability;
 use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Admin\EventFormController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('events', [EventController::class, 'index'])
     ->can(Ability::VisitorsView->value)
     ->name('events.index');
+
+// Fiche d'inscription papier (PDF, A4 portrait), téléchargée avec le cookie de session :
+// deuxième voie d'enregistrement à côté du QR code. `par_page` vaut 1 ou 2 (défaut 2).
+Route::get('events/{event}/formulaire.pdf', EventFormController::class)
+    ->whereNumber('event')
+    ->can(Ability::VisitorsView->value)
+    ->name('events.form');
 
 Route::middleware('can:'.Ability::EventsManage->value)->group(function (): void {
     Route::post('events', [EventController::class, 'store'])->name('events.store');

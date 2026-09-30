@@ -10,7 +10,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, ErrorState, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { useToast } from '../../components/toast/context'
-import { tableCellClass, tableHeadClass } from '../../components/styles'
+import { buttonClass, tableCellClass, tableHeadClass } from '../../components/styles'
 import { copyText } from '../../lib/clipboard'
 import { errorMessage } from '../../lib/errors'
 import { formatDate, formatNumber } from '../../lib/format'
@@ -19,6 +19,29 @@ import { EventPosterPanel } from './EventPosterPanel'
 
 function registrationsLabel(event: ChurchEvent): string {
   return `${formatNumber(event.visitors_count)} inscrit${event.visitors_count > 1 ? 's' : ''}`
+}
+
+/** Fiche d'inscription papier (PDF) d'un événement ; le cookie de session suffit. */
+function paperFormUrl(event: ChurchEvent, perPage: 1 | 2): string {
+  return `/api/admin/events/${event.id}/formulaire.pdf?par_page=${perPage}`
+}
+
+/**
+ * Deuxième voie d'enregistrement, à côté du QR code : une fiche à remplir à la main, pour les
+ * personnes sans téléphone ou quand la file d'attente s'allonge. Deux fiches par page par défaut.
+ */
+function PaperFormLinks({ event }: { event: ChurchEvent }) {
+  return (
+    <span role="group" aria-label={`Fiche d’inscription papier de ${event.name}`} className="flex gap-1">
+      <a href={paperFormUrl(event, 2)} download className={buttonClass('ghost', 'sm')}>
+        <Icon name="printer" className="size-4" />
+        Fiche papier (PDF) <span className="sr-only">, 2 fiches par page</span>
+      </a>
+      <a href={paperFormUrl(event, 1)} download className={buttonClass('ghost', 'sm')}>
+        1 par page
+      </a>
+    </span>
+  )
 }
 
 interface RowActionsProps {
@@ -63,6 +86,7 @@ function RowActions({ event, posterOpen, onPoster, onEdit, onDelete }: RowAction
         <Icon name="qr" className="size-4" />
         QR code <span className="sr-only">de {event.name}</span>
       </Button>
+      <PaperFormLinks event={event} />
       {canManage && (
         <>
           <Button variant="ghost" size="sm" onClick={onEdit}>

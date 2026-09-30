@@ -339,6 +339,7 @@ describe('suppression', function (): void {
 describe('permissions', function (): void {
     dataset('routes événements', [
         'liste' => ['GET', 'events', [], 'visitors.view', 200],
+        'fiche papier' => ['GET', 'events/{event}/formulaire.pdf', [], 'visitors.view', 200],
         'création' => ['POST', 'events', ['name' => 'Culte', 'slug' => 'nouveau-culte'], 'events.manage', 201],
         'modification' => ['PATCH', 'events/{event}', ['name' => 'Culte renommé'], 'events.manage', 200],
         'suppression' => ['DELETE', 'events/{event}', [], 'events.manage', 204],

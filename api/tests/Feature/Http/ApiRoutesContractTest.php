@@ -79,6 +79,7 @@ it('expose exactement les routes du contrat, avec leur authentification et leur 
         'DELETE /api/admin/report-recipients/{recipient} auth recipients.manage',
         'POST /api/admin/report-recipients/test auth recipients.manage',
         'GET /api/admin/events auth visitors.view',
+        'GET /api/admin/events/{event}/formulaire.pdf auth visitors.view',
         'POST /api/admin/events auth events.manage',
         'PATCH /api/admin/events/{event} auth events.manage',
         'DELETE /api/admin/events/{event} auth events.manage',
