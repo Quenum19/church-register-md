@@ -39,25 +39,25 @@
         .gold { border-top: 1.4pt solid #C9A227; }
 
         /* Lignes de saisie : libellé au-dessus, trait sur toute la largeur. */
-        .field { margin-top: 5mm; }
+        .field { margin-top: 7mm; }
         .field .lab { font-size: 10pt; color: #4A0E6B; font-weight: bold; padding-bottom: 1mm; }
-        .field .rule { border-bottom: 0.7pt solid #4B5563; height: 11mm; }
+        .field .rule { border-bottom: 0.7pt solid #4B5563; height: 13mm; }
 
         /* Question à cocher. */
         .question { margin-top: 7mm; font-size: 10pt; color: #4A0E6B; font-weight: bold; }
         .choice { margin-top: 3mm; }
-        .choice td { height: 9.5mm; vertical-align: bottom; padding-bottom: 0.5mm; }
+        .choice td { height: 10.5mm; vertical-align: bottom; padding-bottom: 0.5mm; }
         .check { border: 1pt solid #111827; height: 5mm !important; vertical-align: middle; }
+
         .choice-label { padding-left: 3mm; vertical-align: middle; }
         .inline-lab { font-size: 9.5pt; color: #4B5563; padding-left: 4mm; vertical-align: bottom; }
         .rule { border-bottom: 0.7pt solid #4B5563; }
 
         /* Consentement : case obligatoire et mention d'information. */
-        .consent { margin-top: 6mm; }
-        .consent td { vertical-align: top; }
-        .consent .bar { border-left: 2.5pt solid #C9A227; }
-        .consent .text { font-weight: bold; padding-left: 3mm; }
-        .notice { font-size: 9pt; color: #4B5563; padding-left: 3mm; padding-top: 1mm; }
+        /* Consentement : encadré clair, case à cocher détachée du texte. */
+        .consent { margin-top: 9mm; background-color: #F7F1FB; border: 0.8pt solid #D9C8E4; }
+        .consent td { vertical-align: middle; padding: 3.5mm 4mm; }
+        .consent .text { font-weight: bold; padding-left: 4mm; }
 
         /* Pied de page : QR discret du lien public. */
         .foot { margin-top: 6mm; }
@@ -65,6 +65,7 @@
                    font-size: 9pt; color: #6B7280; }
         .foot .qr img { width: 20mm; }
         .foot .url { color: #6B1F8A; }
+        .notice { font-size: 8pt; color: #6B7280; padding-top: 1mm; }
     </style>
 </head>
 <body>
@@ -105,7 +106,7 @@
                 <table>
                     <tr>
                         <td style="width: 10%"></td>
-                        <td class="rule" style="width: 90%; height: 11mm"></td>
+                        <td class="rule" style="width: 90%; height: 13mm"></td>
                     </tr>
                 </table>
             </td>
@@ -151,36 +152,8 @@
 
     <table class="consent">
         <tr>
-            <td class="bar" style="width: 5%">
-                <table>
-                    <tr>
-                        <td class="check" style="width: 70%"></td>
-                        <td style="width: 30%"></td>
-                    </tr>
-                </table>
-            </td>
-            <td style="width: 95%">
-                <div class="text">{{ $consent }}</div>
-                <div class="notice">{{ $notice }}</div>
-            </td>
-        </tr>
-    </table>
-
-    <table class="field">
-        <tr>
-            <td class="lab" style="width: 45%">Date</td>
-            <td class="lab" style="width: 55%; padding-left: 6mm">Signature</td>
-        </tr>
-        <tr>
-            <td class="rule" style="width: 45%"></td>
-            <td style="width: 55%">
-                <table>
-                    <tr>
-                        <td style="width: 10%"></td>
-                        <td class="rule" style="width: 90%; height: 11mm"></td>
-                    </tr>
-                </table>
-            </td>
+            <td class="check" style="width: 3%"></td>
+            <td class="text" style="width: 97%">{{ $consent }}</td>
         </tr>
     </table>
 
@@ -194,6 +167,7 @@
             <td style="width: 84%; padding-left: 4mm">
                 {{ $qrHint }}
                 <div class="url">{{ $url }}</div>
+                <div class="notice">{{ $notice }}</div>
             </td>
         </tr>
     </table>

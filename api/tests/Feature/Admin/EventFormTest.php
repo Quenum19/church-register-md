@@ -151,15 +151,16 @@ describe('contenu', function (): void {
             ->toContain(EventFormExport::WHATSAPP)
             ->toContain('Numéro WhatsApp, s\'il est différent du téléphone')
             ->toContain(e(EventFormExport::CONSENT))
+            // La mention d'information reste sur la fiche, en petit, au pied de page.
             ->toContain(e(EventFormExport::NOTICE))
-            ->toContain('Signature')
-            ->toContain('Date');
+            // Ni date ni signature : la case cochée fait foi, comme à l'écran.
+            ->not->toContain('Signature');
 
         // Champs écrits à la main sur des lignes, et non dans des cases à un chiffre :
         // une ligne par champ libre (nom, téléphone, commune, quartier, nom du membre,
-        // précision, WhatsApp, date, signature).
+        // précision, WhatsApp).
         expect($html)->not->toContain('class="digit"')
-            ->and(substr_count($html, 'class="rule"'))->toBeGreaterThanOrEqual(9);
+            ->and(substr_count($html, 'class="rule"'))->toBeGreaterThanOrEqual(7);
     });
 
     it('intègre le logo et le QR code du lien public en data URI, sans aucune URL distante', function (): void {
