@@ -431,7 +431,7 @@ Objet `Event` : voir §1.
 | POST | `/api/admin/events` | `events.manage` | `{ name, slug, event_date\|null, active }` → 201 `{ data: Event }` ; slug déjà pris ou hors format → 422 sur `slug` |
 | PATCH | `/api/admin/events/{id}` | `events.manage` | `{ name?, slug?, event_date?, active? }` (le **nom et le slug** sont modifiables) → `{ data: Event }` ; slug pris par un autre événement → 422 |
 | DELETE | `/api/admin/events/{id}` | `events.manage` | 204 ; **409 `event_has_visits`** si des visites y sont rattachées (message invitant à désactiver plutôt qu'à supprimer) |
-| GET | `/api/admin/events/{id}/formulaire.pdf` | `visitors.view` | Fiche d'inscription papier vierge (A4 portrait), `par_page` ∈ {1, 2} (défaut 2, sinon 422). Reprend les champs du formulaire allégé, avec le logo, le nom et la date de l'événement, son QR code et un cadre « Réservé au service ». Aucune donnée personnelle, donc pas de journalisation d'audit. |
+| GET | `/api/admin/events/{id}/formulaire.pdf` | `visitors.view` | Fiche de présence papier vierge, **une par page A4**, nommée `fiche-presence-{slug}.pdf`. Reprend les champs du formulaire allégé sur des lignes manuscrites, avec le logo, le nom et la date de l'événement et son QR code. Aucune donnée personnelle, donc pas de journalisation d'audit. |
 
 `events.manage` est réservée au **super_admin** ; la lecture reste ouverte à `visitors.view`
 (le lien et son QR code servent à tout le dashboard). Identifiants non numériques → 404.

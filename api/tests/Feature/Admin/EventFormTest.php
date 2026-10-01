@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Tests\Feature\Admin\Support\AdminFixtures;
 
 /*
-| Fiche d'inscription papier d'un événement — GET /api/admin/events/{event}/formulaire.pdf.
+| Fiche de présence papier d'un événement — GET /api/admin/events/{event}/formulaire.pdf.
 | Deuxième voie d'enregistrement à côté du QR code : les champs reprennent le formulaire allégé
 | du lien événement, la fiche est vierge (aucune donnée personnelle) et se télécharge avec le
 | cookie de session, comme les exports de visiteurs.
@@ -57,12 +57,12 @@ function eventFormPages(string $pdf): array
 }
 
 describe('endpoint', function (): void {
-    it('télécharge un PDF A4 portrait nommé formulaire-{slug}.pdf', function (): void {
+    it('télécharge un PDF A4 portrait nommé fiche-presence-{slug}.pdf', function (): void {
         $response = $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf")->assertOk();
 
         expect($response->headers->get('Content-Type'))->toBe('application/pdf')
             ->and($response->headers->get('Content-Disposition'))
-            ->toContain('attachment')->toContain('formulaire-culte-4-octobre.pdf')
+            ->toContain('attachment')->toContain('fiche-presence-culte-4-octobre.pdf')
             ->and($response->headers->get('Cache-Control'))->toContain('no-store')
             ->and(substr((string) $response->getContent(), 0, 5))->toBe('%PDF-')
             // A4 portrait : 595,28 × 841,89 points.
@@ -85,35 +85,24 @@ describe('endpoint', function (): void {
             ->assertJsonPath('code', 'forbidden');
     });
 
-    it('accepte par_page 1 ou 2 et refuse toute autre valeur (422)', function (): void {
-        $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf?par_page=1")->assertOk();
-        $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf?par_page=2")->assertOk();
+    it('ignore un paramètre de pagination hérité : la fiche reste unique', function (): void {
+        // L'ancienne version acceptait « par_page » (1 ou 2 fiches). Un lien ou un signet
+        // qui le porte encore ne doit ni échouer, ni ressortir deux fiches.
+        $pages = eventFormPages((string) $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf?par_page=2")->getContent());
 
-        foreach (['3', '0', 'deux', '-1'] as $invalid) {
-            $this->getJson("/api/admin/events/{$this->event->id}/formulaire.pdf?par_page={$invalid}")
-                ->assertUnprocessable()
-                ->assertJsonValidationErrors(['par_page']);
-        }
+        expect($pages)->toHaveCount(1)
+            ->and(substr_count($pages[0], EventFormExport::CONSENT_START))->toBe(1);
     });
 });
 
 describe('contenu', function (): void {
-    it('imprime deux fiches identiques par défaut, séparées par un trait de coupe', function (): void {
+    it('imprime une seule fiche par page A4, sans trait de coupe', function (): void {
         $pages = eventFormPages((string) $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf")->getContent());
 
         expect($pages)->toHaveCount(1)
-            ->and(substr_count($pages[0], 'Fiche d\'inscription'))->toBe(2)
-            ->and(substr_count($pages[0], 'Nom et prénoms'))->toBe(2)
-            ->and(substr_count($pages[0], EventFormExport::CONSENT))->toBe(2)
-            ->and($pages[0])->toContain('découper ici');
-    });
-
-    it('imprime une seule fiche, sans trait de coupe, avec par_page=1', function (): void {
-        $pages = eventFormPages((string) $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf?par_page=1")->getContent());
-
-        expect($pages)->toHaveCount(1)
-            ->and(substr_count($pages[0], 'Fiche d\'inscription'))->toBe(1)
+            ->and(substr_count($pages[0], EventFormExport::TITLE))->toBe(1)
             ->and(substr_count($pages[0], 'Nom et prénoms'))->toBe(1)
+            ->and(substr_count($pages[0], EventFormExport::CONSENT_START))->toBe(1)
             ->and($pages[0])->not->toContain('découper ici');
     });
 
@@ -138,7 +127,7 @@ describe('contenu', function (): void {
     it('omet la ligne de date pour un événement sans date', function (): void {
         $undated = Event::factory()->withoutDate()->create(['name' => 'Évangélisation', 'slug' => 'evangelisation']);
 
-        $html = app(EventFormExport::class)->html($undated, 1);
+        $html = app(EventFormExport::class)->html($undated);
 
         expect($html)->toContain('Évangélisation')
             ->not->toContain('event-date">');
@@ -156,19 +145,21 @@ describe('contenu', function (): void {
             ->toContain('Quartier')
             ->toContain(e(EventFormExport::SOURCE_QUESTION))
             ->toContain(Source::InviteMembre->label())
-            ->toContain('Nom du membre')
+            ->toContain('Son nom')
             ->toContain(Source::Autre->label())
             ->toContain('Précisez')
             ->toContain(EventFormExport::WHATSAPP)
-            ->toContain('Numéro WhatsApp si différent')
+            ->toContain('Numéro WhatsApp, s\'il est différent du téléphone')
             ->toContain(e(EventFormExport::CONSENT))
             ->toContain(e(EventFormExport::NOTICE))
             ->toContain('Signature')
-            ->toContain('Date')
-            ->toContain('Réservé au service');
+            ->toContain('Date');
 
-        // Deux cases à un chiffre par fiche (téléphone et WhatsApp), dix chacune.
-        expect(substr_count($html, 'class="digit"'))->toBe(2 * 2 * EventFormExport::PHONE_BOXES);
+        // Champs écrits à la main sur des lignes, et non dans des cases à un chiffre :
+        // une ligne par champ libre (nom, téléphone, commune, quartier, nom du membre,
+        // précision, WhatsApp, date, signature).
+        expect($html)->not->toContain('class="digit"')
+            ->and(substr_count($html, 'class="rule"'))->toBeGreaterThanOrEqual(9);
     });
 
     it('intègre le logo et le QR code du lien public en data URI, sans aucune URL distante', function (): void {
@@ -183,7 +174,7 @@ describe('contenu', function (): void {
             ->and(substr_count($html, '<img'))->toBe(2)
             ->and($html)->not->toContain('src="http');
 
-        $pdf = (string) $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf?par_page=1")->getContent();
+        $pdf = (string) $this->get("/api/admin/events/{$this->event->id}/formulaire.pdf")->getContent();
 
         // Deux objets image dans le document, et aucune ressource chargée par le réseau.
         expect(substr_count($pdf, '/Subtype /Image'))->toBeGreaterThanOrEqual(2)
@@ -197,7 +188,7 @@ describe('contenu', function (): void {
             'event_date' => '2026-10-04',
         ]);
 
-        $html = app(EventFormExport::class)->html($hostile, 2);
+        $html = app(EventFormExport::class)->html($hostile);
 
         expect($html)->toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
             ->not->toContain('<script>')

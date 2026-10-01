@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Fiche d'inscription papier d'un événement (A4 portrait), deuxième voie d'enregistrement à
+ * Fiche de présence papier d un événement (une par page A4), deuxième voie d'enregistrement à
  * côté du QR code : personne sans téléphone, file d'attente, batterie vide.
  *
  * Les champs reprennent exactement le formulaire allégé du lien événement
@@ -30,18 +30,13 @@ class EventFormExport
 {
     public const VIEW = 'exports.event-form';
 
-    public const TITLE = "Fiche d'inscription";
-
-    /** Nombre de fiches par page A4 accepté par l'endpoint. */
-    public const PER_PAGE = [1, 2];
-
-    public const DEFAULT_PER_PAGE = 2;
-
-    /** Cases à un chiffre du numéro de téléphone (format ivoirien : 10 chiffres). */
-    public const PHONE_BOXES = 10;
+    public const TITLE = 'Fiche de présence';
 
     /** Mot pour mot ce que la personne coche à l'écran (Visit1EventPage). */
     public const CONSENT = "J'accepte que l'Église enregistre ces informations pour assurer mon suivi pastoral.";
+
+    /** Début du consentement, sur une seule ligne : sert aux tests qui lisent le texte du PDF. */
+    public const CONSENT_START = "J'accepte que l'Église enregistre ces informations";
 
     public const NOTICE = 'Réservées aux responsables de l\'Église et conservées 24 mois après votre dernière visite.';
 
@@ -56,7 +51,7 @@ class EventFormExport
         private readonly ExportLogo $logo,
     ) {}
 
-    public function download(Event $event, int $perPage, string $filename): Response
+    public function download(Event $event, string $filename): Response
     {
         /** @var PdfWrapper $pdf */
         $pdf = Pdf::setOption([
@@ -68,24 +63,24 @@ class EventFormExport
             // 1,4 Mo de DejaVu Sans dans un document d'une seule page.
             'isFontSubsettingEnabled' => true,
         ])
-            ->loadHTML($this->html($event, $perPage))
+            ->loadHTML($this->html($event))
             ->setPaper('a4', 'portrait');
 
         return $pdf->download($filename)->header('Cache-Control', 'no-store, private');
     }
 
     /**
-     * Nom du fichier téléchargé : formulaire-{slug}.pdf.
+     * Nom du fichier téléchargé : fiche-presence-{slug}.pdf.
      */
     public function filename(Event $event): string
     {
-        return 'formulaire-'.$event->slug.'.pdf';
+        return 'fiche-presence-'.$event->slug.'.pdf';
     }
 
     /**
      * HTML du document (exposé pour les tests d'échappement et de mise en page).
      */
-    public function html(Event $event, int $perPage): string
+    public function html(Event $event): string
     {
         $url = $event->publicUrl();
 
@@ -97,8 +92,6 @@ class EventFormExport
             'eventDate' => self::longDate($event->event_date),
             'url' => $url,
             'qr' => $this->qr($url),
-            'perPage' => in_array($perPage, self::PER_PAGE, true) ? $perPage : self::DEFAULT_PER_PAGE,
-            'phoneBoxes' => self::PHONE_BOXES,
             'sourceQuestion' => self::SOURCE_QUESTION,
             'invitedLabel' => Source::InviteMembre->label(),
             'otherLabel' => Source::Autre->label(),

@@ -223,21 +223,16 @@ describe('événements — lien et affiche', () => {
     expect(document.documentElement.dataset.printPoster).toBe('')
   })
 
-  it('propose la fiche d’inscription papier en 2 fiches par page, et en 1 par page', async () => {
+  it('propose la fiche de présence papier, une par page', async () => {
     eventsServer([makeEvent()])
     renderAdmin('/admin/evenements')
 
-    const group = within(await screen.findByRole('table')).getByRole('group', {
-      name: 'Fiche d’inscription papier de Évangélisation du 4 octobre',
+    const link = within(await screen.findByRole('table')).getByRole('link', {
+      name: 'Fiche de présence papier de Évangélisation du 4 octobre',
     })
 
-    const two = within(group).getByRole('link', { name: /^Fiche papier \(PDF\)/ })
-    expect(two).toHaveAttribute('href', '/api/admin/events/7/formulaire.pdf?par_page=2')
-    expect(two).toHaveAttribute('download')
-
-    const one = within(group).getByRole('link', { name: '1 par page' })
-    expect(one).toHaveAttribute('href', '/api/admin/events/7/formulaire.pdf?par_page=1')
-    expect(one).toHaveAttribute('download')
+    expect(link).toHaveAttribute('href', '/api/admin/events/7/formulaire.pdf')
+    expect(link).toHaveAttribute('download')
   })
 })
 
@@ -255,7 +250,7 @@ describe('événements — droits', () => {
     expect(within(table()).getByRole('button', { name: /^Copier le lien/ })).toBeInTheDocument()
     expect(within(table()).getByRole('button', { name: /^QR code/ })).toBeInTheDocument()
     // La fiche papier suit l'ability de lecture (visitors.view), pas events.manage.
-    expect(within(table()).getByRole('link', { name: /^Fiche papier \(PDF\)/ })).toBeInTheDocument()
+    expect(within(table()).getByRole('link', { name: /^Fiche de présence papier/ })).toBeInTheDocument()
   })
 })
 
