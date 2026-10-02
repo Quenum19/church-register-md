@@ -29,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property Source $source
  * @property string|null $source_other
  * @property string|null $invited_by
+ * @property string|null $inviter_congregation
  * @property int|null $inviter_family_id
  * @property bool $wants_whatsapp_group
  * @property Carbon|null $consent_at
@@ -60,6 +61,7 @@ class Visitor extends Model
         'source',
         'source_other',
         'invited_by',
+        'inviter_congregation',
         'inviter_family_id',
         'wants_whatsapp_group',
         'consent_at',

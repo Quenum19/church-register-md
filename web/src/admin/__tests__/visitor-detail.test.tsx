@@ -91,6 +91,19 @@ describe('fiche visiteur — contenu et navigation', () => {
     expect(screen.getByText('Invité(e) par un membre')).toBeInTheDocument()
   })
 
+  it('montre la congrégation de l’invitant, et l’omet quand elle est inconnue', async () => {
+    detailServer('lecteur', { inviter_congregation: 'Yopougon' })
+    const { unmount } = renderAdmin('/admin/visiteurs/5')
+    expect(await screen.findByText('Congrégation de l’invitant')).toBeInTheDocument()
+    expect(screen.getByText('Yopougon')).toBeInTheDocument()
+    unmount()
+
+    detailServer('lecteur', { inviter_congregation: null })
+    renderAdmin('/admin/visiteurs/5')
+    expect(await screen.findByText('Invité(e) par')).toBeInTheDocument()
+    expect(screen.queryByText('Congrégation de l’invitant')).not.toBeInTheDocument()
+  })
+
   it('ramène à la liste d’origine avec ses filtres', async () => {
     detailServer('lecteur')
     renderAdmin({

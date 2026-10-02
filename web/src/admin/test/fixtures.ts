@@ -95,6 +95,7 @@ export function makeVisitorDetail(overrides: Partial<VisitorDetail> = {}): Visit
     source: 'invite_membre',
     source_other: null,
     invited_by: 'Marie',
+    inviter_congregation: null,
     inviter_family: { id: 2, name: 'Richesse' },
     wants_whatsapp_group: false,
     consent_at: '2026-08-02T09:00:00+00:00',

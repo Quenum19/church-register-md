@@ -127,6 +127,8 @@ export interface Visit1Answers {
   source: Source
   source_other?: string | null
   invited_by?: string | null
+  // Congrégation de la personne qui a invité : l’Église en compte plusieurs.
+  inviter_congregation?: string | null
   inviter_family_id?: number | null
   whatsapp?: PhoneInput | null
   whatsapp_same_as_phone?: boolean
@@ -243,6 +245,7 @@ export interface VisitorDetail extends VisitorSummary {
   source: Source
   source_other: string | null
   invited_by: string | null
+  inviter_congregation: string | null
   inviter_family: FamilyRef | null
   wants_whatsapp_group: boolean
   consent_at: string | null
@@ -275,6 +278,7 @@ export interface UpdateVisitorRequest {
   commune?: string
   quartier?: string
   invited_by?: string | null
+  inviter_congregation?: string | null
   wants_whatsapp_group?: boolean
 }
 

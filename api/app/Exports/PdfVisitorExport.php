@@ -48,8 +48,8 @@ class PdfVisitorExport
      * Colonnes du document : intitulé, largeur en % de la largeur utile (A4 paysage, marges de
      * 10 mm : 277 mm) et alignement. Total = 100.
      *
-     * Le PDF est un document de lecture, pas un tableur : il ne reprend PAS les treize colonnes
-     * du CSV. Les treize champs restent lisibles, mais hiérarchisés — l'origine sous le nom, le
+     * Le PDF est un document de lecture, pas un tableur : il ne reprend PAS les quatorze colonnes
+     * du CSV. Les quatorze champs restent lisibles, mais hiérarchisés — l'origine sous le nom, le
      * WhatsApp sous le téléphone, la famille d'accueil sous le statut — ce qui laisse à chaque
      * colonne la place de respirer. Numéros et dates ne se coupent plus en deux lignes.
      *
@@ -177,15 +177,16 @@ class PdfVisitorExport
     }
 
     /**
-     * Origine de la personne, en une ligne sous son nom : « Culte Spécial · Invité(e) par Edson »,
-     * ou la source déclarée quand personne ne l'a invitée.
+     * Origine de la personne, en une ligne sous son nom : « Culte Spécial · Invité(e) par Edson
+     * (Yopougon) », ou la source déclarée quand personne ne l'a invitée. La congrégation de
+     * l'invitant suit son nom, entre parenthèses, quand elle est connue.
      *
-     * @param  array{source: string, invitedBy: string, event: string}  $record
+     * @param  array{source: string, invitedBy: string, congregation: string, event: string}  $record
      */
     private static function origin(array $record): string
     {
         $how = $record['invitedBy'] !== ''
-            ? 'Invité(e) par '.$record['invitedBy']
+            ? 'Invité(e) par '.$record['invitedBy'].($record['congregation'] !== '' ? ' ('.$record['congregation'].')' : '')
             : $record['source'];
 
         return implode(' · ', array_filter([$record['event'], $how], static fn (string $part): bool => $part !== ''));

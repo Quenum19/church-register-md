@@ -42,6 +42,7 @@ class VisitorFactory extends Factory
             'source' => $source,
             'source_other' => $source === Source::Autre ? 'Invitation lors d\'un concert' : null,
             'invited_by' => $source === Source::InviteMembre ? IvorianSamples::fullName() : null,
+            'inviter_congregation' => null,
             'inviter_family_id' => null,
             'wants_whatsapp_group' => false,
             'consent_at' => now(),

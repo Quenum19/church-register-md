@@ -1,7 +1,7 @@
 // Parcours visiteur public (monté sous « /* » par main.tsx).
 // Bundle initial : accueil/identification et état du parcours.
 // Chargés à la demande : formulaires et pages de fin (préchargés depuis l'accueil),
-// la variante « événement » (/e/:slug), /qrcode, /reseaux, /confidentialite, 404.
+// la variante « événement » (/e/:slug), /qrcode (et /qrcode/e/:slug), /reseaux, /confidentialite, 404.
 
 import { lazy, Suspense, useState, type ComponentType } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
@@ -72,6 +72,8 @@ export default function PublicApp() {
             <Route path="deja-enregistre" element={<AlreadyTodayPage />} />
             <Route path="confidentialite" element={<PrivacyPage />} />
             <Route path="qrcode" element={<QrCodePage />} />
+            {/* Même écran pour un culte spécial : son nom, sa date, le QR de son lien dédié. */}
+            <Route path="qrcode/e/:slug" element={<QrCodePage />} />
             <Route path="reseaux" element={<SocialPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

@@ -20,6 +20,7 @@ const schema = z
     commune: requiredText('La commune', 80),
     quartier: requiredText('Le quartier', 80),
     invited_by: optionalText('Le nom de l’invitant', 100),
+    inviter_congregation: optionalText('La congrégation de l’invitant', 100),
     whatsapp_country: z.enum(COUNTRY_CODES),
     whatsapp_number: z.string().trim().max(25, 'Numéro trop long.'),
     wants_whatsapp_group: z.boolean(),
@@ -43,6 +44,7 @@ const FIELDS = [
   'commune',
   'quartier',
   'invited_by',
+  'inviter_congregation',
   'whatsapp_country',
   'whatsapp_number',
   'wants_whatsapp_group',
@@ -66,6 +68,7 @@ export function VisitorEditDialog({ visitor, onClose }: { visitor: VisitorDetail
       commune: visitor.commune,
       quartier: visitor.quartier,
       invited_by: visitor.invited_by ?? '',
+      inviter_congregation: visitor.inviter_congregation ?? '',
       whatsapp_country: visitor.whatsapp ? whatsapp.country : 'CI',
       whatsapp_number: visitor.whatsapp ? whatsapp.number : '',
       wants_whatsapp_group: visitor.wants_whatsapp_group,
@@ -81,6 +84,7 @@ export function VisitorEditDialog({ visitor, onClose }: { visitor: VisitorDetail
     if (dirtyFields.commune) body.commune = values.commune
     if (dirtyFields.quartier) body.quartier = values.quartier
     if (dirtyFields.invited_by) body.invited_by = values.invited_by || null
+    if (dirtyFields.inviter_congregation) body.inviter_congregation = values.inviter_congregation || null
     if (dirtyFields.wants_whatsapp_group) body.wants_whatsapp_group = values.wants_whatsapp_group
     if (dirtyFields.whatsapp_country || dirtyFields.whatsapp_number) {
       body.whatsapp = values.whatsapp_number
@@ -121,9 +125,16 @@ export function VisitorEditDialog({ visitor, onClose }: { visitor: VisitorDetail
             {(control) => <input {...control} {...register('quartier')} autoComplete="off" className={inputClass} />}
           </Field>
         </div>
-        <Field label="Invité(e) par" optional error={errors.invited_by?.message}>
-          {(control) => <input {...control} {...register('invited_by')} autoComplete="off" className={inputClass} />}
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Invité(e) par" optional error={errors.invited_by?.message}>
+            {(control) => <input {...control} {...register('invited_by')} autoComplete="off" className={inputClass} />}
+          </Field>
+          <Field label="Sa congrégation" optional error={errors.inviter_congregation?.message}>
+            {(control) => (
+              <input {...control} {...register('inviter_congregation')} autoComplete="off" className={inputClass} />
+            )}
+          </Field>
+        </div>
         <fieldset className="flex flex-col gap-3 rounded-xl border border-gray-300 p-4">
           <legend className="px-1 text-sm font-bold text-gray-800">WhatsApp</legend>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,14rem)_1fr]">

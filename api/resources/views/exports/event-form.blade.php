@@ -51,6 +51,7 @@
 
         .choice-label { padding-left: 3mm; vertical-align: middle; }
         .inline-lab { font-size: 9.5pt; color: #4B5563; padding-left: 4mm; vertical-align: bottom; }
+        .sub-lab { font-size: 9.5pt; color: #4B5563; text-align: right; padding-right: 3mm; vertical-align: bottom; }
         .rule { border-bottom: 0.7pt solid #4B5563; }
 
         /* Consentement : case obligatoire et mention d'information. */
@@ -124,6 +125,16 @@
             <td class="check" style="width: 4%"></td>
             <td class="choice-label" style="width: 34%">{{ $invitedLabel }}</td>
             <td class="inline-lab" style="width: 14%">Son nom</td>
+            <td class="rule" style="width: 48%"></td>
+        </tr>
+    </table>
+
+    {{-- Rattachée à l'invitation : l'Église compte plusieurs congrégations, savoir d'où vient
+         l'invitant oriente le suivi. La ligne reste vide si la personne ne la connaît pas. --}}
+    <table class="choice">
+        <tr>
+            <td style="width: 34%"></td>
+            <td class="sub-lab" style="width: 18%">{{ $congregationLabel }}</td>
             <td class="rule" style="width: 48%"></td>
         </tr>
     </table>

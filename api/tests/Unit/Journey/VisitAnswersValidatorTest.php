@@ -57,6 +57,7 @@ it('normalise le profil de la visite 1 et laisse les réponses vides', function 
             'source' => Source::ReseauxSociaux,
             'source_other' => null,
             'invited_by' => null,
+            'inviter_congregation' => null,
             'inviter_family_id' => null,
             'whatsapp' => '+2250500000000',
             'wants_whatsapp_group' => true,

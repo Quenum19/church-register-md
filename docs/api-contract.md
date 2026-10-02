@@ -240,6 +240,7 @@ formulaire allégé d'un culte spécial n'est qu'une variante d'affichage côté
   "source": "enum requis",
   "source_other": "≤200, requis si source=autre",
   "invited_by": "≤100, requis si source=invite_membre",
+  "inviter_congregation": "≤100, optionnel (seulement si invite_membre) — congrégation de l'invitant",
   "inviter_family_id": "id famille, optionnel (seulement si invite_membre)",
   "whatsapp": { "country": "CI", "number": "07 00 00 00 00" },
   "whatsapp_same_as_phone": false,
@@ -354,7 +355,8 @@ Cache de 5 min : une visite enregistrée peut apparaître avec ce délai.
 ```
 `VisitorDetail` = `VisitorSummary` +
 ```json
-{ "source": "invite_membre", "source_other": null, "invited_by": "…", "inviter_family": { "id": 1, "name": "…" },
+{ "source": "invite_membre", "source_other": null, "invited_by": "…", "inviter_congregation": "Yopougon"|null,
+  "inviter_family": { "id": 1, "name": "…" },
   "wants_whatsapp_group": false, "consent_at": "…",
   "visits": [ { "id": 1, "visit_number": 1, "visit_date": "2026-09-20", "family": { "id": 4, "name": "Force" },
                "event": { "id": 1, "name": "Culte spécial du 4 octobre", "slug": "culte-4-octobre" }, "answers": {} } ],
@@ -368,7 +370,7 @@ Cache de 5 min : une visite enregistrée peut apparaître avec ce délai.
 |---|---|---|---|
 | GET | `/api/admin/visitors` | view | filtres combinables (ET) : `search` (≤100, LIKE paramétré sur nom, commune, quartier, téléphone), `status` ∈ enum ∪ {`non_membre`}, `family_id` (a au moins une visite accueillie par cette famille), `event_id` (a au moins une visite rattachée à cet événement), `from`/`to` (`YYYY-MM-DD`, sur la date de 1re visite), `sort` ∈ {`-created_at` (défaut), `created_at`, `full_name`, `-last_visit_date`} ; paginé. `family_id` / `event_id` inconnus → 422 |
 | GET | `/api/admin/visitors/{id}` | view | `{ data: VisitorDetail }` |
-| PATCH | `/api/admin/visitors/{id}` | update | `{ full_name?, whatsapp? ({country,number}|null), commune?, quartier?, invited_by?, wants_whatsapp_group? }` → `{ data: VisitorDetail }` |
+| PATCH | `/api/admin/visitors/{id}` | update | `{ full_name?, whatsapp? ({country,number}|null), commune?, quartier?, invited_by?, inviter_congregation?, wants_whatsapp_group? }` → `{ data: VisitorDetail }` |
 | DELETE | `/api/admin/visitors/{id}` | delete | 204 (supprime visites, notes, membre en cascade) |
 | POST | `/api/admin/visitors/{id}/convert` | convert | 200 `{ data: VisitorDetail }` ; 409 `not_eligible` si statut ≠ `membre_potentiel` ; 409 `already_member` |
 | DELETE | `/api/admin/visitors/{id}/convert` | unconvert | 200 `{ data: VisitorDetail }` (statut recalculé) ; 409 `not_member` |
@@ -514,7 +516,7 @@ Exception assumée : `user.deleted` conserve en `meta` l'e-mail et le rôle de l
 - `GET /api/health` → 200 `{ "status": "ok", "db": "ok" }`, sans session ; **60 requêtes/min par IP**
   (la sonde interroge la base : sans limite, elle sert de levier d'épuisement des connexions).
 - SPA : le build de `web/` est copié dans `api/public/` ; `index.html` y est renommé `spa.html`.
-  Toute route GET non-API, non-fichier (`/`, `/visite/…`, `/e/…`, `/admin/…`, `/qrcode`) renvoie `spa.html`
+  Toute route GET non-API, non-fichier (`/`, `/visite/…`, `/e/…`, `/admin/…`, `/qrcode`, `/qrcode/e/…`) renvoie `spa.html`
   via la route de repli Laravel (en-tête `Cache-Control: no-cache`), ce qui applique aussi les en-têtes de sécurité.
 - En-têtes (middleware global) : CSP `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
   img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self';

@@ -47,6 +47,7 @@ const identityShape = {
   quartier: requiredText(80, 'Indiquez votre quartier.', 'Le quartier ne doit pas dépasser 80 caractères.'),
   source_other: z.string(),
   invited_by: z.string(),
+  inviter_congregation: z.string(),
   inviter_family_id: z.string(),
   consent: z.boolean().check(z.refine((v) => v, 'Votre accord est nécessaire pour enregistrer votre visite.')),
 }

@@ -36,6 +36,7 @@ class VisitorDetailResource extends VisitorSummaryResource
             'source' => $visitor->source->value,
             'source_other' => $visitor->source_other,
             'invited_by' => $visitor->invited_by,
+            'inviter_congregation' => $visitor->inviter_congregation,
             'inviter_family' => FamilyResource::ref($visitor->inviterFamily),
             'wants_whatsapp_group' => $visitor->wants_whatsapp_group,
             'consent_at' => self::timestamp($visitor->consent_at),

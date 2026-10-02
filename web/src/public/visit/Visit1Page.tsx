@@ -22,6 +22,7 @@ const FIELD_ORDER = [
   'quartier',
   'source',
   'invited_by',
+  'inviter_congregation',
   'inviter_family_id',
   'source_other',
   'whatsapp_choice',
@@ -36,7 +37,7 @@ const textLink = `rounded font-bold text-church-purple underline underline-offse
 const resolver = zodResolver(visit1Schema)
 
 const DEPENDENTS = {
-  source: ['invited_by', 'inviter_family_id', 'source_other'],
+  source: ['invited_by', 'inviter_congregation', 'inviter_family_id', 'source_other'],
   whatsapp_choice: ['whatsapp_number'],
   whatsapp_country: ['whatsapp_number'],
   wants_whatsapp_group: ['whatsapp_choice', 'whatsapp_number'],
@@ -52,6 +53,7 @@ function toRequest(v: Visit1Values) {
     source: v.source as Source,
     source_other: v.source === 'autre' ? v.source_other.trim() : null,
     invited_by: invited ? v.invited_by.trim() : null,
+    inviter_congregation: invited && v.inviter_congregation.trim() ? v.inviter_congregation.trim() : null,
     inviter_family_id: invited && v.inviter_family_id ? Number(v.inviter_family_id) : null,
     // Contrat §2 inchangé : « autre numéro » renseigne `whatsapp`, « numéro de l'accueil »
     // pose `whatsapp_same_as_phone`, « pas de WhatsApp » n'envoie ni l'un ni l'autre.
@@ -77,6 +79,7 @@ export default function Visit1Page() {
     source: '',
     source_other: '',
     invited_by: '',
+    inviter_congregation: '',
     inviter_family_id: '',
     // Le numéro de l'accueil est de loin le cas le plus fréquent : présélectionné quand il existe.
     whatsapp_choice: identified ? 'same' : 'other',

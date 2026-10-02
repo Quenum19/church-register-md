@@ -29,6 +29,7 @@ const FIELD_ORDER = [
   'quartier',
   'source',
   'invited_by',
+  'inviter_congregation',
   'inviter_family_id',
   'source_other',
   'wants_whatsapp_group',
@@ -42,7 +43,7 @@ const textLink = `rounded font-bold text-church-purple underline underline-offse
 const resolver = zodResolver(visit1EventSchema)
 
 const DEPENDENTS = {
-  source: ['invited_by', 'inviter_family_id', 'source_other'],
+  source: ['invited_by', 'inviter_congregation', 'inviter_family_id', 'source_other'],
   wants_whatsapp_group: ['whatsapp_number'],
   whatsapp_country: ['whatsapp_number'],
 } satisfies Partial<Record<keyof Visit1EventValues, (keyof Visit1EventValues)[]>>
@@ -58,6 +59,7 @@ function toRequest(v: Visit1EventValues) {
     source: v.source as Source,
     source_other: v.source === 'autre' ? v.source_other.trim() : null,
     invited_by: invited ? v.invited_by.trim() : null,
+    inviter_congregation: invited && v.inviter_congregation.trim() ? v.inviter_congregation.trim() : null,
     inviter_family_id: invited && v.inviter_family_id ? Number(v.inviter_family_id) : null,
     // Contrat §2 inchangé : un autre numéro renseigne `whatsapp`, sinon c'est celui de
     // l'accueil (`whatsapp_same_as_phone`). Sans demande de groupe, rien n'est affirmé.
@@ -81,6 +83,7 @@ export default function Visit1EventPage({ event }: { event: JourneyEvent }) {
     source: '',
     source_other: '',
     invited_by: '',
+    inviter_congregation: '',
     inviter_family_id: '',
     whatsapp_country: identified?.country ?? 'CI',
     whatsapp_number: '',

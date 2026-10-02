@@ -246,6 +246,17 @@ describe('événements — lien et affiche', () => {
     expect(link).toHaveAttribute('download')
   })
 
+  it('propose l’affichage tablette du QR code de l’événement', async () => {
+    eventsServer([makeEvent()])
+    const { user } = renderAdmin('/admin/evenements')
+
+    await user.click((await eventRows()).getByRole('button', { name: /^QR code/ }))
+
+    const link = await screen.findByRole('link', { name: /^Affichage tablette/ })
+    expect(link).toHaveAttribute('href', '/qrcode/e/evangelisation-4-octobre')
+    expect(link).toHaveAttribute('target', '_blank')
+  })
+
   it('ouvre la liste des visiteurs filtrée sur l’événement depuis le nombre d’inscrits', async () => {
     eventsServer([makeEvent({ visits_count: 15, visitors_count: 12 })])
     renderAdmin('/admin/evenements')

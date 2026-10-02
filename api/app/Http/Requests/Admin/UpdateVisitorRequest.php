@@ -20,7 +20,7 @@ use Illuminate\Validation\Validator;
 class UpdateVisitorRequest extends FormRequest
 {
     /** Champs modifiables, dans l'ordre du contrat. */
-    public const FIELDS = ['full_name', 'whatsapp', 'commune', 'quartier', 'invited_by', 'wants_whatsapp_group'];
+    public const FIELDS = ['full_name', 'whatsapp', 'commune', 'quartier', 'invited_by', 'inviter_congregation', 'wants_whatsapp_group'];
 
     public function authorize(): bool
     {
@@ -38,6 +38,7 @@ class UpdateVisitorRequest extends FormRequest
             'commune' => ['sometimes', 'required', 'string', 'max:80'],
             'quartier' => ['sometimes', 'required', 'string', 'max:80'],
             'invited_by' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'inviter_congregation' => ['sometimes', 'nullable', 'string', 'max:100'],
             'wants_whatsapp_group' => ['sometimes', 'required', 'boolean'],
             'whatsapp' => ['sometimes', 'nullable', 'array:country,number'],
             'whatsapp.country' => ['required_with:whatsapp.number', 'string', Rule::enum(PhoneCountry::class)],
@@ -60,6 +61,7 @@ class UpdateVisitorRequest extends FormRequest
             'commune' => 'commune',
             'quartier' => 'quartier',
             'invited_by' => 'invité(e) par',
+            'inviter_congregation' => 'congrégation de l\x27invitant',
             'wants_whatsapp_group' => 'groupe WhatsApp',
             'whatsapp' => 'WhatsApp',
             'whatsapp.country' => 'pays du numéro WhatsApp',
@@ -108,9 +110,12 @@ class UpdateVisitorRequest extends FormRequest
             }
         }
 
-        if (array_key_exists('invited_by', $validated)) {
-            $invitedBy = is_string($validated['invited_by']) ? trim($validated['invited_by']) : '';
-            $changes['invited_by'] = $invitedBy === '' ? null : $invitedBy;
+        // Textes facultatifs : vide => NULL (jamais de chaîne vide en base).
+        foreach (['invited_by', 'inviter_congregation'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $value = is_string($validated[$field]) ? trim($validated[$field]) : '';
+                $changes[$field] = $value === '' ? null : $value;
+            }
         }
 
         if (array_key_exists('wants_whatsapp_group', $validated)) {

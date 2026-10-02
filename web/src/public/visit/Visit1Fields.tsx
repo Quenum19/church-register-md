@@ -17,6 +17,7 @@ export interface Visit1IdentityValues {
   source: string
   source_other: string
   invited_by: string
+  inviter_congregation: string
   inviter_family_id: string
 }
 
@@ -94,6 +95,18 @@ export function Visit1IdentityFields<T extends FieldValues & Visit1IdentityValue
             maxLength={100}
             error={errorOf(path('invited_by'))}
             {...register(path('invited_by'))}
+          />
+          {/* L'Église compte plusieurs congrégations : savoir d'où vient l'invitant oriente
+              le suivi. Champ libre, facultatif — personne ne doit buter dessus. */}
+          <TextField
+            id="inviter_congregation"
+            label="Sa congrégation"
+            optional
+            hint="Si vous la connaissez."
+            autoComplete="off"
+            maxLength={100}
+            error={errorOf(path('inviter_congregation'))}
+            {...register(path('inviter_congregation'))}
           />
           {families.length > 0 && (
             <Controller

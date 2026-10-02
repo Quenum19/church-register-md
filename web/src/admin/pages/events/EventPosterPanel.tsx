@@ -101,6 +101,17 @@ export function EventPosterPanel({ event, onClose }: { event: ChurchEvent; onClo
               <Icon name="printer" className="size-4" />
               Imprimer l’affiche
             </Button>
+            {/* Écran plein à poser à l'accueil : nom et date du culte, QR de son lien dédié. */}
+            <a
+              href={`/qrcode/e/${event.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonClass('ghost')}
+            >
+              <Icon name="external" className="size-4" />
+              Affichage tablette
+              <span className="sr-only"> (nouvel onglet)</span>
+            </a>
             {qr.failed && (
               <p role="alert" className="text-sm font-bold text-red-800">
                 Le QR code n’a pas pu être généré.

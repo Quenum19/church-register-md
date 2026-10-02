@@ -286,6 +286,9 @@ function VisitorView({ visitor, back }: { visitor: VisitorDetail; back: BackStat
                 {visitor.source_other && <span className="block text-gray-700">« {visitor.source_other} »</span>}
               </Detail>
               {visitor.invited_by && <Detail label="Invité(e) par">{visitor.invited_by}</Detail>}
+              {visitor.inviter_congregation && (
+                <Detail label="Congrégation de l’invitant">{visitor.inviter_congregation}</Detail>
+              )}
               {visitor.inviter_family && <Detail label="Famille de l’invitant">{visitor.inviter_family.name}</Detail>}
               <Detail label="Consentement">
                 {visitor.consent_at ? `Donné le ${formatDateTime(visitor.consent_at)}` : 'Non enregistré'}

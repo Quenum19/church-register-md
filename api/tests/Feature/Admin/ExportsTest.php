@@ -144,7 +144,7 @@ describe('CSV', function (): void {
         expect(exportCsvRows($response))->toBe([
             VisitorExport::HEADINGS,
             ['Awa Koné', "'+225 07 00 00 00 01", "'+33 6 12 34 56 78", 'Cocody', 'Angré', 'Deuxième visite', '2',
-                '02/08/2026', '06/09/2026', 'Sagesse, Force', 'Invité(e) par un membre', 'Marie K.', ''],
+                '02/08/2026', '06/09/2026', 'Sagesse, Force', 'Invité(e) par un membre', 'Marie K.', '', ''],
         ]);
     });
 
@@ -307,7 +307,7 @@ describe('XLSX', function (): void {
             ->and(AuditLog::query()->sole()->action)->toBe('export.xlsx');
     });
 
-    it('fixe une largeur pour chacune des treize colonnes (plus aucun intitulé tronqué)', function (): void {
+    it('fixe une largeur pour chacune des quatorze colonnes (plus aucun intitulé tronqué)', function (): void {
         AdminFixtures::visitor(['2026-09-01'], ['full_name' => 'Awa Koné']);
 
         $sheet = (string) exportXlsxEntry($this->get('/api/admin/exports/visitors.xlsx'), 'xl/worksheets/sheet1.xml');
@@ -377,13 +377,13 @@ describe('XLSX', function (): void {
             ->and($rows[3][0])->not->toContain('Cocody')
             ->and($rows[$notice][0])->toBe(VisitorExport::CONFIDENTIALITY);
 
-        // Titres et mention finale fusionnés sur les treize colonnes.
-        expect($sheet)->toContain('<mergeCell ref="A1:M1"/>')
-            ->toContain('<mergeCell ref="A3:M3"/>')
-            ->toContain('<mergeCell ref="A'.$notice.':M'.$notice.'"/>')
+        // Titres et mention finale fusionnés sur les quatorze colonnes.
+        expect($sheet)->toContain('<mergeCell ref="A1:N1"/>')
+            ->toContain('<mergeCell ref="A3:N3"/>')
+            ->toContain('<mergeCell ref="A'.$notice.':N'.$notice.'"/>')
             // Volets figés sous l'en-tête et filtre automatique sur le tableau.
             ->toContain('state="frozen"')
-            ->toContain('<autoFilter ref="A'.XlsxVisitorExport::HEADING_ROW.':M'.$lastData.'"/>');
+            ->toContain('<autoFilter ref="A'.XlsxVisitorExport::HEADING_ROW.':N'.$lastData.'"/>');
     });
 
     it('reste un classeur valide quand aucun visiteur ne correspond', function (): void {
@@ -398,7 +398,7 @@ describe('XLSX', function (): void {
             ->and(array_values($rows[$heading]))->toBe(VisitorExport::HEADINGS)
             ->and($rows[$heading + 2][0])->toBe(VisitorExport::CONFIDENTIALITY)
             // Le filtre automatique se réduit à la ligne d'en-tête, sans plage invalide.
-            ->and($sheet)->toContain('<autoFilter ref="A'.$heading.':M'.$heading.'"/>');
+            ->and($sheet)->toContain('<autoFilter ref="A'.$heading.':N'.$heading.'"/>');
     });
 });
 

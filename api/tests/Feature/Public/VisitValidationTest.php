@@ -142,12 +142,19 @@ it('ne garde que les champs liés à la source choisie', function (): void {
         ->and($visitor->inviter_family_id)->toBeNull();
 });
 
-it('accepte « invité par un membre » sans famille d\'invitant', function (): void {
+it('accepte « invité par un membre » sans famille ni congrégation d\'invitant', function (): void {
     $this->postVisit($this->tokenFor(), $this->visit1Answers([
-        'source' => 'invite_membre', 'invited_by' => 'Jean Kouadio', 'inviter_family_id' => null,
+        'source' => 'invite_membre',
+        'invited_by' => 'Jean Kouadio',
+        'inviter_family_id' => null,
+        // Champ laissé vide à l'écran : la congrégation de l'invitant n'est pas toujours connue.
+        'inviter_congregation' => '   ',
     ]))->assertCreated();
 
-    expect(Visitor::query()->sole()->inviter_family_id)->toBeNull();
+    $visitor = Visitor::query()->sole();
+
+    expect($visitor->inviter_family_id)->toBeNull()
+        ->and($visitor->inviter_congregation)->toBeNull();
 });
 
 it('stocke le WhatsApp en E.164, ou NULL s\'il est vide', function (mixed $whatsapp, ?string $expected): void {

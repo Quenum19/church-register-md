@@ -38,6 +38,8 @@ class VisitorExport
         "Familles d'accueil",
         'Source',
         'Invité(e) par',
+        // Congrégation de la personne qui a invité (l'Église en compte plusieurs).
+        "Congrégation de l'invitant",
         // Événement d'origine de la 1re visite (culte spécial, évangélisation), vide sinon.
         'Événement',
     ];
@@ -126,7 +128,7 @@ class VisitorExport
      *
      * Les clés suivent l'ordre de HEADINGS : `array_values()` redonne exactement une ligne CSV.
      *
-     * @return Generator<int, array{name: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, visits: int, first: string, last: string, families: string, source: string, invitedBy: string, event: string}>
+     * @return Generator<int, array{name: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, visits: int, first: string, last: string, families: string, source: string, invitedBy: string, congregation: string, event: string}>
      */
     public function records(VisitorListQuery $query): Generator
     {
@@ -157,7 +159,7 @@ class VisitorExport
     /**
      * @param  array<int, string>  $families  noms des familles par identifiant
      * @param  array<int, string>  $events  noms des événements par identifiant
-     * @return array{name: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, visits: int, first: string, last: string, families: string, source: string, invitedBy: string, event: string}
+     * @return array{name: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, visits: int, first: string, last: string, families: string, source: string, invitedBy: string, congregation: string, event: string}
      */
     private function record(Visitor $visitor, array $families, array $events): array
     {
@@ -181,6 +183,7 @@ class VisitorExport
             'families' => implode(', ', $hostFamilies),
             'source' => $this->source($visitor),
             'invitedBy' => $visitor->invited_by ?? '',
+            'congregation' => $visitor->inviter_congregation ?? '',
             'event' => $this->event($visitor, $events),
         ];
     }

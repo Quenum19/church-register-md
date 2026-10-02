@@ -95,6 +95,10 @@ class DemoSeeder extends Seeder
             'source' => $source,
             'source_other' => $source === Source::Autre ? 'Rencontre lors d\'une croisade' : null,
             'invited_by' => $source === Source::InviteMembre ? IvorianSamples::fullName() : null,
+            // Congrégation de l'invitant : facultative, nommée d'après son quartier.
+            'inviter_congregation' => $source === Source::InviteMembre && fake()->boolean(45)
+                ? fake()->randomElement(array_keys(IvorianSamples::COMMUNES))
+                : null,
             'inviter_family_id' => $source === Source::InviteMembre && fake()->boolean(70) ? fake()->randomElement($familyIds) : null,
             'wants_whatsapp_group' => $wantsGroup,
             'consent_at' => $first,

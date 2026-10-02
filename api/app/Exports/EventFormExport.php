@@ -42,6 +42,9 @@ class EventFormExport
 
     public const SOURCE_QUESTION = "Comment avez-vous connu l'Église ?";
 
+    /** Congrégation de la personne qui a invité : l'Église en compte plusieurs. */
+    public const CONGREGATION = 'Sa congrégation';
+
     public const QR_HINT = 'Vous pouvez aussi vous enregistrer vous-même en scannant ce code.';
 
     public function __construct(
@@ -92,6 +95,7 @@ class EventFormExport
             'qr' => $this->qr($url),
             'sourceQuestion' => self::SOURCE_QUESTION,
             'invitedLabel' => Source::InviteMembre->label(),
+            'congregationLabel' => self::CONGREGATION,
             'otherLabel' => Source::Autre->label(),
             'whatsapp' => self::WHATSAPP,
             'consent' => self::CONSENT,

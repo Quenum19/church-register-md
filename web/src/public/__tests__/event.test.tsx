@@ -259,6 +259,7 @@ describe('Formulaire allégé de la première visite', () => {
         source: 'autre',
         source_other: 'Une affiche au marché',
         invited_by: null,
+        inviter_congregation: null,
         inviter_family_id: null,
         whatsapp: null,
         whatsapp_same_as_phone: false,
@@ -295,6 +296,7 @@ describe('Formulaire allégé de la première visite', () => {
     await fillIdentity(user)
     await user.click(within(sourceGroup()).getByRole('radio', { name: 'Invité(e) par un membre' }))
     await user.type(screen.getByLabelText('Nom de la personne qui vous a invité(e)'), 'Koffi Adjoua')
+    await user.type(screen.getByLabelText(/Sa congrégation/), 'Yopougon')
     await user.selectOptions(await screen.findByRole('combobox', { name: /Sa famille/ }), '4')
     await user.click(screen.getByRole('checkbox', { name: /J'accepte/ }))
     await submit(user)
@@ -304,6 +306,7 @@ describe('Formulaire allégé de la première visite', () => {
       source: 'invite_membre',
       source_other: null,
       invited_by: 'Koffi Adjoua',
+      inviter_congregation: 'Yopougon',
       inviter_family_id: 4,
       whatsapp: { country: 'FR', number: '0612345678' },
       whatsapp_same_as_phone: false,

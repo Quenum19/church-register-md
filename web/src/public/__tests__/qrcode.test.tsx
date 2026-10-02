@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CONFIG, heading, renderPublic, setupPublicTest, type ApiMock } from './helpers'
+import { CONFIG, EVENT, EVENT_PATH, heading, renderPublic, setupPublicTest, type ApiMock } from './helpers'
 
 let api: ApiMock
 const release = vi.fn(async () => {})
@@ -60,5 +60,30 @@ describe('Page /qrcode', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('Page /qrcode/e/{slug} — tablette d’un culte spécial', () => {
+  it('affiche le nom et la date du culte, et encode son lien dédié', async () => {
+    api.on('GET', EVENT_PATH, { status: 200, body: EVENT })
+    renderPublic(`/qrcode/e/${EVENT.slug}`)
+
+    await heading(CONFIG.church_name)
+    expect(await screen.findByText(EVENT.name)).toBeInTheDocument()
+    expect(screen.getByText('dimanche 4 octobre 2026')).toBeInTheDocument()
+    expect(screen.getByText(/pour vous inscrire/)).toBeInTheDocument()
+    expect(
+      await screen.findByRole('img', { name: `QR code menant à registre.exemple.org/e/${EVENT.slug}` }),
+    ).toBeInTheDocument()
+  })
+
+  it('revient au formulaire habituel, en l’annonçant, quand le lien est désactivé', async () => {
+    api.on('GET', EVENT_PATH, { status: 404, body: { code: 'not_found', message: 'Introuvable.' } })
+    renderPublic(`/qrcode/e/${EVENT.slug}`)
+
+    await heading(CONFIG.church_name)
+    expect(await screen.findByText(/n'est plus actif/)).toBeInTheDocument()
+    expect(screen.queryByText(EVENT.name)).not.toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'QR code menant à registre.exemple.org' })).toBeInTheDocument()
   })
 })
