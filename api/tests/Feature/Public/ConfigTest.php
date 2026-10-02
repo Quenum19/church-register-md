@@ -32,6 +32,8 @@ it('renvoie exactement la configuration du contrat', function (): void {
         'verse' => ['ref' => 'Jean 21:17', 'text' => "Si tu m'aimes, pais mes brebis."],
         'current_family' => ['id' => $this->familyId('Force'), 'name' => 'Force'],
         'families' => $families,
+        // Aucun réseau social renseigné par le seeder.
+        'social_networks' => [],
     ]);
 });
 
@@ -42,7 +44,7 @@ it('renvoie le verset personnalisé sans ses métadonnées', function (): void {
         ->assertOk()
         ->assertExactJsonStructure([
             'church_name', 'public_url', 'verse' => ['ref', 'text'],
-            'current_family' => ['id', 'name'], 'families' => ['*' => ['id', 'name']],
+            'current_family' => ['id', 'name'], 'families' => ['*' => ['id', 'name']], 'social_networks',
         ])
         ->assertJsonPath('verse', ['ref' => 'Psaumes 121:1', 'text' => 'Je lève mes yeux vers les montagnes.']);
 });

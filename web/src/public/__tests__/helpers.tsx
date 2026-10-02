@@ -24,6 +24,10 @@ export const CONFIG: PublicConfig = {
     { id: 1, name: 'Puissance' },
     { id: 4, name: 'Force' },
   ],
+  social_networks: [
+    { key: 'facebook', label: 'Facebook', url: 'https://facebook.com/exemple' },
+    { key: 'youtube', label: 'YouTube', url: 'https://youtube.com/@exemple' },
+  ],
 }
 
 /** Culte spécial du dimanche 4 octobre 2026, ouvert par « /e/culte-4-octobre ». */

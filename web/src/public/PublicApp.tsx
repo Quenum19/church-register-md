@@ -1,7 +1,7 @@
 // Parcours visiteur public (monté sous « /* » par main.tsx).
 // Bundle initial : accueil/identification et état du parcours.
 // Chargés à la demande : formulaires et pages de fin (préchargés depuis l'accueil),
-// la variante « événement » (/e/:slug), /qrcode, /confidentialite, 404.
+// la variante « événement » (/e/:slug), /qrcode, /reseaux, /confidentialite, 404.
 
 import { lazy, Suspense, useState, type ComponentType } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
@@ -35,6 +35,7 @@ const CompletePage = lazyWithRetry(() => loadEndPages().then((m) => ({ default: 
 const AlreadyTodayPage = lazyWithRetry(() => loadEndPages().then((m) => ({ default: m.AlreadyTodayPage })))
 const PrivacyPage = lazyWithRetry(() => import('./pages/PrivacyPage'))
 const QrCodePage = lazyWithRetry(() => import('./qrcode/QrCodePage'))
+const SocialPage = lazyWithRetry(() => import('./pages/SocialPage'))
 const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'))
 // Variante « événement » (/e/:slug) : jamais dans le bundle initial ni préchargée,
 // elle n'est téléchargée que par les visiteurs qui ouvrent un lien de culte spécial.
@@ -71,6 +72,7 @@ export default function PublicApp() {
             <Route path="deja-enregistre" element={<AlreadyTodayPage />} />
             <Route path="confidentialite" element={<PrivacyPage />} />
             <Route path="qrcode" element={<QrCodePage />} />
+            <Route path="reseaux" element={<SocialPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

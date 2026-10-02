@@ -39,6 +39,10 @@ class UpdateSettingsRequest extends FormRequest
             'verse.preset' => ['present_with:verse', 'nullable', 'integer', Rule::in($presets)],
             'verse.ref' => [Rule::requiredIf($custom), 'nullable', 'string', 'max:60'],
             'verse.text' => [Rule::requiredIf($custom), 'nullable', 'string', 'max:500'],
+
+            // Réseaux sociaux : chaque adresse est facultative ; une chaîne vide efface le lien.
+            'social_links' => ['sometimes', 'array:'.implode(',', array_keys(SettingsService::SOCIAL_NETWORKS))],
+            'social_links.*' => ['nullable', 'string', 'max:255', 'url:https'],
         ];
     }
 
@@ -54,6 +58,11 @@ class UpdateSettingsRequest extends FormRequest
             'verse.preset' => 'verset prédéfini',
             'verse.ref' => 'référence du verset',
             'verse.text' => 'texte du verset',
+            'social_links' => 'réseaux sociaux',
+            'social_links.facebook' => 'adresse Facebook',
+            'social_links.youtube' => 'adresse YouTube',
+            'social_links.instagram' => 'adresse Instagram',
+            'social_links.tiktok' => 'adresse TikTok',
         ];
     }
 
@@ -66,6 +75,7 @@ class UpdateSettingsRequest extends FormRequest
             'public_url.url' => app()->isProduction()
                 ? 'L\'adresse publique doit être une URL complète en https.'
                 : 'L\'adresse publique doit être une URL complète (http ou https).',
+            'social_links.*.url' => ':attribute doit être une URL complète commençant par https.',
         ];
     }
 

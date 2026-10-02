@@ -72,6 +72,7 @@ it('expose exactement les routes du contrat, avec leur authentification et leur 
         'GET /api/admin/exports/visitors.pdf auth visitors.export',
         'GET /api/admin/reports auth visitors.view',
         'GET /api/admin/reports/{year}/{month} auth visitors.view',
+        'GET /api/admin/reseaux-sociaux/affiche.pdf auth visitors.view',
         'POST /api/admin/reports/{year}/{month}/send auth reports.send',
         'GET /api/admin/report-recipients auth recipients.manage',
         'POST /api/admin/report-recipients auth recipients.manage',

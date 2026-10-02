@@ -9,6 +9,7 @@ import { PasswordTab } from './PasswordTab'
 import { ProfileTab } from './ProfileTab'
 import { RecipientsTab } from './RecipientsTab'
 import { RotationsTab } from './RotationsTab'
+import { SocialTab } from './SocialTab'
 import { TwoFactorTab } from './TwoFactorTab'
 
 interface SettingsTab extends TabItem {
@@ -23,6 +24,7 @@ const TABS: SettingsTab[] = [
   { id: 'rotations', label: 'Rotation des familles', ability: 'visitors.view', render: () => <RotationsTab /> },
   { id: 'destinataires', label: 'Destinataires des rapports', ability: 'recipients.manage', render: () => <RecipientsTab /> },
   { id: 'eglise', label: 'Église', ability: 'visitors.view', render: () => <ChurchTab /> },
+  { id: 'reseaux', label: 'Réseaux sociaux', ability: 'visitors.view', render: () => <SocialTab /> },
 ]
 
 export function SettingsPage() {

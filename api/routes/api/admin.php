@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\FamilyController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\RotationController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SocialPosterController;
 use App\Http\Controllers\Admin\StatsController;
 use App\Http\Controllers\Admin\VisitorController;
 use App\Http\Controllers\Admin\VisitorConversionController;
@@ -75,3 +76,8 @@ Route::put('rotations/{year}/{month}', [RotationController::class, 'update'])
 // Paramètres (sans enveloppe `data`).
 Route::get('settings', [SettingsController::class, 'show'])->can('visitors.view')->name('settings.show');
 Route::put('settings', [SettingsController::class, 'update'])->can('settings.update')->name('settings.update');
+
+// Affichette « Suivez-nous » (PDF) : deux cartes par page A4 à poser sur les tables.
+Route::get('reseaux-sociaux/affiche.pdf', SocialPosterController::class)
+    ->can('visitors.view')
+    ->name('social.poster');

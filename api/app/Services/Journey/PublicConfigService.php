@@ -26,11 +26,11 @@ class PublicConfigService
     ) {}
 
     /**
-     * @return array{church_name: string, public_url: string, verse: array{ref: string, text: string}, current_family: array{id: int, name: string}|null, families: list<array{id: int, name: string}>}
+     * @return array{church_name: string, public_url: string, verse: array{ref: string, text: string}, current_family: array{id: int, name: string}|null, families: list<array{id: int, name: string}>, social_networks: list<array{key: string, label: string, url: string}>}
      */
     public function get(): array
     {
-        /** @var array{church_name: string, public_url: string, verse: array{ref: string, text: string}, current_family: array{id: int, name: string}|null, families: list<array{id: int, name: string}>} */
+        /** @var array{church_name: string, public_url: string, verse: array{ref: string, text: string}, current_family: array{id: int, name: string}|null, families: list<array{id: int, name: string}>, social_networks: list<array{key: string, label: string, url: string}>} */
         return $this->cache->remember(self::CACHE_KEY, self::TTL_SECONDS, fn (): array => $this->build());
     }
 
@@ -40,7 +40,7 @@ class PublicConfigService
     }
 
     /**
-     * @return array{church_name: string, public_url: string, verse: array{ref: string, text: string}, current_family: array{id: int, name: string}|null, families: list<array{id: int, name: string}>}
+     * @return array{church_name: string, public_url: string, verse: array{ref: string, text: string}, current_family: array{id: int, name: string}|null, families: list<array{id: int, name: string}>, social_networks: list<array{key: string, label: string, url: string}>}
      */
     private function build(): array
     {
@@ -61,6 +61,8 @@ class PublicConfigService
             'verse' => ['ref' => $verse['ref'], 'text' => $verse['text']],
             'current_family' => $current === null ? null : $this->familyRef($current),
             'families' => $families,
+            // Réseaux renseignés seulement : la page « Suivez-nous » n'affiche que ceux-là.
+            'social_networks' => $this->settings->socialNetworks(),
         ];
     }
 

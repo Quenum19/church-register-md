@@ -18,7 +18,7 @@ class SettingsController extends Controller
     use InvalidatesCaches;
 
     /** Clés comparées pour le journal (noms des champs modifiés). */
-    private const FIELDS = ['church_name', 'public_url', 'verse'];
+    private const FIELDS = ['church_name', 'public_url', 'verse', 'social_links'];
 
     public function __construct(
         private readonly SettingsService $settings,
@@ -49,6 +49,19 @@ class SettingsController extends Controller
                     static fn (mixed $value): string => trim((string) $value),
                     $values,
                 ));
+            }
+
+            if ($request->has('social_links')) {
+                /** @var array<string, string|null> $submitted */
+                $submitted = $request->validated('social_links') ?? [];
+                $links = $this->settings->socialLinks();
+
+                foreach ($submitted as $network => $url) {
+                    // Une chaîne vide efface le lien : le réseau disparaît de la page publique.
+                    $links[$network] = is_string($url) && trim($url) !== '' ? trim($url) : null;
+                }
+
+                $this->settings->set('social_links', array_filter($links, static fn (?string $url): bool => $url !== null));
             }
 
             if ($request->has('verse')) {

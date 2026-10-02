@@ -74,12 +74,21 @@ export interface ApiErrorBody {
 
 /* ─── API publique ───────────────────────────────────────────────── */
 
+/** Réseau social renseigné dans les paramètres, affiché sur /reseaux. */
+export interface SocialNetwork {
+  key: 'facebook' | 'youtube' | 'instagram' | 'tiktok'
+  label: string
+  url: string
+}
+
 export interface PublicConfig {
   church_name: string
   public_url: string
   verse: { ref: string; text: string }
   current_family: FamilyRef | null
   families: FamilyRef[]
+  /** Uniquement les réseaux renseignés, dans l'ordre des paramètres. */
+  social_networks: SocialNetwork[]
 }
 
 /**
@@ -345,12 +354,18 @@ export interface Settings {
   public_url: string
   verse: Verse & { preset: number | null }
   verse_presets: Verse[]
+  /** Adresse de chaque réseau connu, `null` quand elle n'est pas renseignée. */
+  social_links: Record<SocialNetwork['key'], string | null>
+  /** Libellés des réseaux gérés, dans l'ordre d'affichage. */
+  social_networks: Record<SocialNetwork['key'], string>
 }
 
 export interface UpdateSettingsRequest {
   church_name?: string
   public_url?: string
   verse?: { preset: number } | { preset: null; ref: string; text: string }
+  /** Une chaîne vide efface le lien : le réseau disparaît de la page publique. */
+  social_links?: Partial<Record<SocialNetwork['key'], string>>
 }
 
 /* ─── Admin : utilisateurs, journal ──────────────────────────────── */

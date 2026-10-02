@@ -151,10 +151,14 @@ Cache 60 s. Réponse 200 :
   "public_url": "https://registre.exemple.org",
   "verse": { "ref": "Jean 21:17", "text": "Si tu m'aimes, pais mes brebis." },
   "current_family": { "id": 4, "name": "Force" },
-  "families": [ { "id": 1, "name": "Puissance" } ]
+  "families": [ { "id": 1, "name": "Puissance" } ],
+  "social_networks": [ { "key": "facebook", "label": "Facebook", "url": "https://facebook.com/…" } ]
 }
 ```
 `current_family` peut être `null` si aucune rotation n'est définie pour le mois.
+`social_networks` ne contient que les réseaux renseignés dans les paramètres (`facebook`, `youtube`,
+`instagram`, `tiktok`, dans cet ordre) ; c'est ce qu'affiche la page publique `/reseaux`, cible du
+QR code posé sur les tables.
 
 ### GET `/api/public/events/{slug}`
 En-tête du lien dédié d'un événement, pour que le SPA puisse l'annoncer avant l'identification.
@@ -431,6 +435,7 @@ Objet `Event` : voir §1.
 | POST | `/api/admin/events` | `events.manage` | `{ name, slug, event_date\|null, active }` → 201 `{ data: Event }` ; slug déjà pris ou hors format → 422 sur `slug` |
 | PATCH | `/api/admin/events/{id}` | `events.manage` | `{ name?, slug?, event_date?, active? }` (le **nom et le slug** sont modifiables) → `{ data: Event }` ; slug pris par un autre événement → 422 |
 | DELETE | `/api/admin/events/{id}` | `events.manage` | 204 ; **409 `event_has_visits`** si des visites y sont rattachées (message invitant à désactiver plutôt qu'à supprimer) |
+| GET | `/api/admin/reseaux-sociaux/affiche.pdf` | `visitors.view` | Affichette « Suivez-nous » (PDF A4, deux cartes à découper) : logo, QR code de la page publique `/reseaux` et liste des réseaux renseignés. Aucune donnée personnelle, pas de journalisation. |
 | GET | `/api/admin/events/{id}/formulaire.pdf` | `visitors.view` | Fiche de présence papier vierge, **une par page A4**, nommée `fiche-presence-{slug}.pdf`. Reprend les champs du formulaire allégé sur des lignes manuscrites, avec le logo, le nom et la date de l'événement et son QR code. Aucune donnée personnelle, donc pas de journalisation d'audit. |
 
 `events.manage` est réservée au **super_admin** ; la lecture reste ouverte à `visitors.view`
@@ -452,7 +457,12 @@ Journal d'audit : `event.created`, `event.updated`, `event.deleted`.
                      { "ref": "Jean 3:16", "text": "Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle." },
                      { "ref": "Psaumes 23:1", "text": "L'Éternel est mon berger : je ne manquerai de rien." } ] }
 ```
-**Sans enveloppe `data`** (comme `/api/admin/stats`). PUT accepte `{ church_name? ≤120, public_url? (URL https en prod), verse?: { preset: 0|1|2 } | { preset: null, ref ≤60, text ≤500 } }`
+**Sans enveloppe `data`** (comme `/api/admin/stats`). La réponse porte aussi `social_links` (adresse de chaque réseau connu, `null` si vide) et
+`social_networks` (libellés : `facebook`, `youtube`, `instagram`, `tiktok`).
+
+PUT accepte `{ church_name? ≤120, public_url? (URL https en prod), verse?: { preset: 0|1|2 } | { preset: null, ref ≤60, text ≤500 },
+social_links?: { facebook?, youtube?, instagram?, tiktok? } }` — chaque adresse est une URL **https**,
+une chaîne vide efface le lien (le réseau disparaît de `/reseaux`) ; sinon 422 sur `social_links.<réseau>`
 et renvoie le même objet que GET.
 Le QR code est généré côté client à partir de `public_url`.
 

@@ -8,7 +8,7 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 /**
  * Paramètres applicatifs (table `settings`), avec cache et valeurs par défaut.
  *
- * Clés connues : church_name, public_url, verse, verse_presets.
+ * Clés connues : church_name, public_url, verse, verse_presets, social_links.
  * `verse` est stocké sous la forme { "preset": 0|1|2 } ou { "preset": null, "ref": "…", "text": "…" }.
  */
 class SettingsService
@@ -28,6 +28,19 @@ class SettingsService
         ['ref' => 'Psaumes 23:1', 'text' => "L'Éternel est mon berger : je ne manquerai de rien."],
     ];
 
+    /**
+     * Réseaux sociaux proposés sur la page publique « Suivez-nous » (/reseaux), dans cet ordre.
+     * Une adresse vide masque simplement le réseau : la page n'affiche que ce qui est renseigné.
+     *
+     * @var array<string, string>
+     */
+    public const SOCIAL_NETWORKS = [
+        'facebook' => 'Facebook',
+        'youtube' => 'YouTube',
+        'instagram' => 'Instagram',
+        'tiktok' => 'TikTok',
+    ];
+
     public function __construct(private readonly CacheRepository $cache) {}
 
     /**
@@ -42,6 +55,7 @@ class SettingsService
             'public_url' => (string) config('app.url'),
             'verse' => ['preset' => 0],
             'verse_presets' => self::VERSE_PRESETS,
+            'social_links' => [],
         ];
     }
 
@@ -165,9 +179,46 @@ class SettingsService
     }
 
     /**
+     * Adresses des réseaux sociaux, toutes les clés connues, `null` quand rien n'est renseigné.
+     *
+     * @return array<string, string|null>
+     */
+    public function socialLinks(): array
+    {
+        $stored = $this->get('social_links');
+        $stored = is_array($stored) ? $stored : [];
+        $links = [];
+
+        foreach (array_keys(self::SOCIAL_NETWORKS) as $network) {
+            $url = $stored[$network] ?? null;
+            $links[$network] = is_string($url) && trim($url) !== '' ? trim($url) : null;
+        }
+
+        return $links;
+    }
+
+    /**
+     * Réseaux réellement renseignés, prêts à afficher : [{ key, label, url }].
+     *
+     * @return list<array{key: string, label: string, url: string}>
+     */
+    public function socialNetworks(): array
+    {
+        $networks = [];
+
+        foreach ($this->socialLinks() as $key => $url) {
+            if ($url !== null) {
+                $networks[] = ['key' => $key, 'label' => self::SOCIAL_NETWORKS[$key], 'url' => $url];
+            }
+        }
+
+        return $networks;
+    }
+
+    /**
      * Représentation du contrat : GET /api/admin/settings.
      *
-     * @return array{church_name: string, public_url: string, verse: array{preset: int|null, ref: string, text: string}, verse_presets: list<array{ref: string, text: string}>}
+     * @return array{church_name: string, public_url: string, verse: array{preset: int|null, ref: string, text: string}, verse_presets: list<array{ref: string, text: string}>, social_links: array<string, string|null>, social_networks: array<string, string>}
      */
     public function toArray(): array
     {
@@ -176,6 +227,8 @@ class SettingsService
             'public_url' => $this->publicUrl(),
             'verse' => $this->verse(),
             'verse_presets' => $this->versePresets(),
+            'social_links' => $this->socialLinks(),
+            'social_networks' => self::SOCIAL_NETWORKS,
         ];
     }
 

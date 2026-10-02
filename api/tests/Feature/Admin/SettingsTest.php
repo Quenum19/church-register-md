@@ -22,6 +22,8 @@ it('renvoie les paramètres au format du contrat, sans enveloppe data', function
             'public_url' => 'http://localhost',
             'verse' => ['preset' => 0, 'ref' => 'Jean 21:17', 'text' => "Si tu m'aimes, pais mes brebis."],
             'verse_presets' => SettingsService::VERSE_PRESETS,
+            'social_links' => ['facebook' => null, 'youtube' => null, 'instagram' => null, 'tiktok' => null],
+            'social_networks' => SettingsService::SOCIAL_NETWORKS,
         ]);
 });
 
@@ -40,6 +42,8 @@ it('modifie le nom, l\'URL et choisit un verset prédéfini', function (): void 
             'public_url' => 'https://registre.exemple.org',
             'verse' => ['preset' => 2, 'ref' => 'Psaumes 23:1', 'text' => "L'Éternel est mon berger : je ne manquerai de rien."],
             'verse_presets' => SettingsService::VERSE_PRESETS,
+            'social_links' => ['facebook' => null, 'youtube' => null, 'instagram' => null, 'tiktok' => null],
+            'social_networks' => SettingsService::SOCIAL_NETWORKS,
         ]);
 
     // Le PUT renvoie exactement le même objet que GET.
