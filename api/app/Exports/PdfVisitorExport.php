@@ -45,18 +45,25 @@ class PdfVisitorExport
     public const TITLE = 'Liste des visiteurs';
 
     /**
-     * Largeur des 13 colonnes en % de la largeur utile (A4 paysage, marges de 10 mm : 277 mm),
-     * dans l'ordre de VisitorExport::HEADINGS ; total = 100. Calibrées à 8 pt pour que
-     * « +225 07 00 00 0001 », « 02/08/2026 » et les intitulés d'en-tête tiennent sans
-     * chevauchement ni césure disgracieuse. La colonne « Statut » a été élargie (libellés
-     * en toutes lettres : « Première visite », « Membre potentiel ») et la colonne
-     * « Événement » prise sur les colonnes les plus larges.
+     * Colonnes du document : intitulé, largeur en % de la largeur utile (A4 paysage, marges de
+     * 10 mm : 277 mm) et alignement. Total = 100.
      *
-     * Toutes les valeurs sont des multiples de 0,5 : leur somme vaut exactement 100.
+     * Le PDF est un document de lecture, pas un tableur : il ne reprend PAS les treize colonnes
+     * du CSV. Les treize champs restent lisibles, mais hiérarchisés — l'origine sous le nom, le
+     * WhatsApp sous le téléphone, la famille d'accueil sous le statut — ce qui laisse à chaque
+     * colonne la place de respirer. Numéros et dates ne se coupent plus en deux lignes.
      *
-     * @var list<float>
+     * @var list<array{label: string, width: float, align: string}>
      */
-    public const COLUMN_WIDTHS = [11.5, 10.5, 10.5, 6.5, 7.5, 7.0, 5.0, 6.5, 6.5, 7.0, 8.5, 6.0, 7.0];
+    public const COLUMNS = [
+        ['label' => 'Visiteur', 'width' => 21.0, 'align' => 'left'],
+        ['label' => 'Téléphone', 'width' => 17.5, 'align' => 'left'],
+        ['label' => 'Commune / Quartier', 'width' => 15.0, 'align' => 'left'],
+        ['label' => 'Statut', 'width' => 15.5, 'align' => 'left'],
+        ['label' => 'Visites', 'width' => 6.0, 'align' => 'right'],
+        ['label' => 'Première visite', 'width' => 12.5, 'align' => 'left'],
+        ['label' => 'Dernière visite', 'width' => 12.5, 'align' => 'left'],
+    ];
 
     /** Marge gauche et droite du pied de page, en points (10 mm, comme @page). */
     private const MARGIN_X = 28.35;
@@ -137,11 +144,51 @@ class PdfVisitorExport
             'generatedAt' => CarbonImmutable::now(is_string($timezone) ? $timezone : 'Africa/Abidjan'),
             'filters' => $this->export->describeFilters($query),
             'count' => $count,
-            'headings' => VisitorExport::HEADINGS,
-            'widths' => self::COLUMN_WIDTHS,
-            'numericColumn' => VisitorExport::VISIT_COUNT_COLUMN,
-            'tables' => $this->tables($this->export->rows($query)),
+            'columns' => self::COLUMNS,
+            'tables' => $this->tables($this->lines($query)),
         ])->render();
+    }
+
+    /**
+     * Lignes telles que la vue les imprime : les champs secondaires (origine, WhatsApp, famille
+     * d'accueil) sont déjà rédigés ici, pour que la vue n'ait plus qu'à les afficher.
+     *
+     * @return Generator<int, array{name: string, origin: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, family: string, visits: int, first: string, last: string}>
+     */
+    private function lines(VisitorListQuery $query): Generator
+    {
+        foreach ($this->export->records($query) as $record) {
+            yield [
+                'name' => $record['name'],
+                'origin' => self::origin($record),
+                'phone' => $record['phone'],
+                // Un WhatsApp identique au téléphone n'apprend rien : il n'est imprimé que
+                // lorsqu'il s'agit d'un second numéro.
+                'whatsapp' => $record['whatsapp'] !== $record['phone'] ? $record['whatsapp'] : '',
+                'commune' => $record['commune'],
+                'quartier' => $record['quartier'],
+                'status' => $record['status'],
+                'family' => $record['families'],
+                'visits' => $record['visits'],
+                'first' => $record['first'],
+                'last' => $record['last'],
+            ];
+        }
+    }
+
+    /**
+     * Origine de la personne, en une ligne sous son nom : « Culte Spécial · Invité(e) par Edson »,
+     * ou la source déclarée quand personne ne l'a invitée.
+     *
+     * @param  array{source: string, invitedBy: string, event: string}  $record
+     */
+    private static function origin(array $record): string
+    {
+        $how = $record['invitedBy'] !== ''
+            ? 'Invité(e) par '.$record['invitedBy']
+            : $record['source'];
+
+        return implode(' · ', array_filter([$record['event'], $how], static fn (string $part): bool => $part !== ''));
     }
 
     /**
@@ -192,8 +239,10 @@ class PdfVisitorExport
      * Regroupe les lignes en tableaux de ROWS_PER_TABLE lignes (mise en page dompdf bien plus
      * rapide qu'un tableau unique, qui est re-découpé à chaque saut de page).
      *
-     * @param  iterable<int, list<int|string>>  $rows
-     * @return Generator<int, list<list<int|string>>>
+     * @template TRow of array<string, int|string>
+     *
+     * @param  iterable<int, TRow>  $rows
+     * @return Generator<int, list<TRow>>
      */
     private function tables(iterable $rows): Generator
     {

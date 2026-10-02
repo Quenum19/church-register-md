@@ -67,7 +67,7 @@ class XlsxVisitorExport
      *
      * @var list<float>
      */
-    public const COLUMN_WIDTHS = [26.0, 20.0, 20.0, 16.0, 18.0, 19.0, 19.0, 13.0, 17.0, 22.0, 24.0, 20.0, 28.0];
+    public const COLUMN_WIDTHS = [26.0, 20.0, 20.0, 16.0, 18.0, 19.0, 19.0, 17.0, 17.0, 22.0, 24.0, 20.0, 28.0];
 
     public function __construct(
         private readonly VisitorExport $export,

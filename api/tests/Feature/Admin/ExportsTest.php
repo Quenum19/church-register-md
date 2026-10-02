@@ -507,7 +507,7 @@ describe('PDF', function (): void {
             'Statut : tous sauf les membres',
             "Famille d'accueil : Force",
             'Événement : Culte spécial du 4 octobre',
-            '1re visite du 01/01/2026 au 30/09/2026',
+            'Première visite du 01/01/2026 au 30/09/2026',
             'Recherche : active (texte non reproduit)',
         ]);
 
@@ -540,7 +540,7 @@ describe('PDF', function (): void {
 
         expect($html)->toContain('display: table-header-group')
             ->and(substr_count($html, '<thead>'))->toBe(2)
-            ->and(substr_count($html, '<th '))->toBe(2 * count(VisitorExport::HEADINGS));
+            ->and(substr_count($html, '<th '))->toBe(2 * count(PdfVisitorExport::COLUMNS));
 
         // L'en-tête se retrouve bien en tête de chacune des pages du document rendu.
         $pages = exportPdfPages((string) $this->get('/api/admin/exports/visitors.pdf?sort=full_name')->getContent());
@@ -548,24 +548,64 @@ describe('PDF', function (): void {
         expect(count($pages))->toBeGreaterThan(1);
 
         foreach ($pages as $page) {
-            expect($page)->toContain('Nom')->toContain('Téléphone')->toContain("Familles\nd'accueil");
+            expect($page)->toContain('Visiteur')->toContain('Téléphone')->toContain('Statut');
         }
     });
 
-    it('dimensionne les treize colonnes pour tenir en A4 paysage', function (): void {
+    it('dimensionne les sept colonnes pour tenir en A4 paysage', function (): void {
         AdminFixtures::visitor(['2026-09-01'], ['full_name' => 'Awa Koné']);
 
-        expect(PdfVisitorExport::COLUMN_WIDTHS)->toHaveCount(count(VisitorExport::HEADINGS))
-            ->and(array_sum(PdfVisitorExport::COLUMN_WIDTHS))->toBe(100.0);
+        expect(PdfVisitorExport::COLUMNS)->toHaveCount(7)
+            ->and(array_sum(array_column(PdfVisitorExport::COLUMNS, 'width')))->toBe(100.0);
 
         $html = app(PdfVisitorExport::class)->html(new VisitorListQuery, 1);
 
         // Les largeurs sont portées par les cellules de la 1re ligne (mise en page fixe dompdf).
         expect($html)->toContain('table-layout: fixed');
 
-        foreach (PdfVisitorExport::COLUMN_WIDTHS as $width) {
-            expect($html)->toContain('style="width: '.$width.'%"');
+        foreach (PdfVisitorExport::COLUMNS as $column) {
+            expect($html)->toContain('style="width: '.$column['width'].'%"')
+                ->toContain('>'.$column['label'].'</th>');
         }
+    });
+
+    it('hiérarchise l\'information plutôt que de serrer treize colonnes', function (): void {
+        // Venue par le lien d'un culte spécial, invitée par un membre, avec un second numéro
+        // WhatsApp : tous les champs secondaires du PDF sont renseignés.
+        $visitor = AdminFixtures::visitor(['2026-09-01'], [
+            'full_name' => 'Awa Koné',
+            'phone' => '+2250700000001',
+            'whatsapp' => '+2250700000002',
+            'commune' => 'Cocody',
+            'quartier' => 'Riviera',
+            'invited_by' => 'Serge Zadi',
+        ]);
+
+        $html = app(PdfVisitorExport::class)->html(new VisitorListQuery, 1);
+
+        // Le nom porte l'origine, le téléphone porte le second numéro, le statut porte la famille.
+        expect($html)->toContain('<div class="name">Awa Koné</div>')
+            ->toContain('Invité(e) par Serge Zadi')
+            ->toContain('WhatsApp +225 07 00 00 00 02')
+            ->toContain('Cocody')
+            ->toContain('Riviera')
+            // Les numéros et les dates ne se coupent jamais en deux lignes.
+            ->toContain('class="nowrap"');
+
+        expect($visitor->fresh())->not->toBeNull();
+    });
+
+    it('n\'imprime pas un WhatsApp identique au téléphone', function (): void {
+        AdminFixtures::visitor(['2026-09-01'], [
+            'full_name' => 'Awa Koné',
+            'phone' => '+2250700000001',
+            'whatsapp' => '+2250700000001',
+        ]);
+
+        $html = app(PdfVisitorExport::class)->html(new VisitorListQuery, 1);
+
+        expect($html)->toContain('+225 07 00 00 00 01')
+            ->not->toContain('WhatsApp');
     });
 
     it('imprime le pied de page sur chaque page : église, mention et pagination', function (): void {
@@ -624,9 +664,10 @@ describe('PDF', function (): void {
 
         $html = app(PdfVisitorExport::class)->html(new VisitorListQuery(sort: 'full_name'), 120);
 
-        // 1 <tr> pour l'en-tête de document, puis 3 tableaux (en-tête + lignes).
+        // 2 <tr> pour l'en-tête de document (bandeau d'identité, puis titre et effectif),
+        // puis 3 tableaux (en-tête + lignes).
         expect(substr_count($html, '<table class="list">'))->toBe(3)
-            ->and(substr_count($html, '<tr'))->toBe(1 + 3 + 120)
+            ->and(substr_count($html, '<tr'))->toBe(2 + 3 + 120)
             ->and($html)->toContain('Visiteur 00001')->toContain('Visiteur 00120')
             ->and(strpos($html, 'Visiteur 00050'))->toBeLessThan(strpos($html, 'Visiteur 00051'));
     });
@@ -653,7 +694,7 @@ describe('PDF', function (): void {
 });
 
 describe('cohérence des trois formats', function (): void {
-    it('utilise exactement les mêmes intitulés de colonnes en CSV, XLSX et PDF', function (): void {
+    it('utilise exactement les mêmes intitulés de colonnes en CSV et en Excel', function (): void {
         AdminFixtures::visitor(['2026-09-01'], ['full_name' => 'Awa Koné']);
 
         $csv = exportCsvRows($this->get('/api/admin/exports/visitors.csv'))[0];
@@ -661,13 +702,32 @@ describe('cohérence des trois formats', function (): void {
         $sheet = (string) exportXlsxEntry($this->get('/api/admin/exports/visitors.xlsx'), 'xl/worksheets/sheet1.xml');
         $xlsx = array_values(exportXlsxRows($sheet)[XlsxVisitorExport::HEADING_ROW]);
 
+        expect($csv)->toBe(VisitorExport::HEADINGS)
+            ->and($xlsx)->toBe(VisitorExport::HEADINGS);
+    });
+
+    it('n\'imprime que sept colonnes en PDF, sans rien perdre des treize champs', function (): void {
+        AdminFixtures::visitor(['2026-09-01'], [
+            'full_name' => 'Awa Koné',
+            'quartier' => 'Riviera',
+            'whatsapp' => '+2250700000002',
+            'invited_by' => 'Serge Zadi',
+        ]);
+
         $html = app(PdfVisitorExport::class)->html(new VisitorListQuery, 1);
         preg_match_all('/<th style="width: [\d.]+%"[^>]*>(.*?)<\/th>/s', $html, $matches);
         $pdf = array_map(static fn (string $cell): string => html_entity_decode(trim($cell), ENT_QUOTES, 'UTF-8'), $matches[1]);
 
-        expect($csv)->toBe(VisitorExport::HEADINGS)
-            ->and($xlsx)->toBe(VisitorExport::HEADINGS)
-            ->and($pdf)->toBe(VisitorExport::HEADINGS);
+        // Le PDF est un document de lecture : les champs secondaires sont imprimés sous leur
+        // champ principal au lieu d'occuper une colonne à eux.
+        expect($pdf)->toBe(array_column(PdfVisitorExport::COLUMNS, 'label'))
+            ->and(count($pdf))->toBeLessThan(count(VisitorExport::HEADINGS));
+
+        // Les six champs sans colonne dédiée restent imprimés.
+        expect($html)->toContain('WhatsApp')          // colonne « WhatsApp »
+            ->toContain('Riviera')                     // colonne « Quartier »
+            ->toContain('Famille ')                    // colonne « Familles d'accueil »
+            ->toContain('Invité(e) par Serge Zadi');   // colonnes « Source » et « Invité(e) par »
     });
 });
 
@@ -720,15 +780,17 @@ describe('colonne « Événement »', function (): void {
             ->and($rows[$heading + 2][$column] ?? '')->toBe('');
     });
 
-    it('cite l\'événement de la 1re visite dans le PDF', function (): void {
+    it('cite l\'événement de la 1re visite dans le PDF, sous le nom de la personne', function (): void {
         $html = app(PdfVisitorExport::class)->html(new VisitorListQuery(sort: 'full_name'), 2);
 
-        expect($html)->toContain('Événement')
-            ->toContain('Culte spécial du 4 octobre');
+        // Le PDF n'a plus de colonne « Événement » : il l'imprime avec l'origine, en gris,
+        // sous le nom du visiteur.
+        expect($html)->toContain('Culte spécial du 4 octobre')
+            ->toMatch('/<div class="sub">[^<]*Culte spécial du 4 octobre/');
 
         $text = exportPdfText((string) $this->get('/api/admin/exports/visitors.pdf?sort=full_name')->getContent());
 
-        expect($text)->toContain('Événement')->toContain('Culte spécial du 4 octobre');
+        expect($text)->toContain('Culte spécial du 4 octobre');
     });
 
     it('filtre les trois exports sur event_id et cite le filtre dans le document', function (): void {

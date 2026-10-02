@@ -245,6 +245,27 @@ describe('événements — lien et affiche', () => {
     expect(link).toHaveAttribute('href', '/api/admin/events/7/affiche.pdf')
     expect(link).toHaveAttribute('download')
   })
+
+  it('ouvre la liste des visiteurs filtrée sur l’événement depuis le nombre d’inscrits', async () => {
+    eventsServer([makeEvent({ visits_count: 15, visitors_count: 12 })])
+    renderAdmin('/admin/evenements')
+
+    const link = within(await screen.findByRole('table')).getByRole('link', {
+      name: 'Voir les 12 inscrits de Évangélisation du 4 octobre',
+    })
+
+    expect(link).toHaveAttribute('href', '/admin/visiteurs?event_id=7')
+  })
+
+  it('n’offre aucun lien quand l’événement n’a encore personne', async () => {
+    eventsServer([makeEvent({ visits_count: 0, visitors_count: 0 })])
+    renderAdmin('/admin/evenements')
+
+    const rows = within(await screen.findByRole('table'))
+
+    expect(rows.getByText('0 inscrit')).toBeInTheDocument()
+    expect(rows.queryByRole('link', { name: /^Voir les/ })).not.toBeInTheDocument()
+  })
 })
 
 describe('événements — droits', () => {

@@ -56,6 +56,7 @@ jour, volontairement). Pour les tester tout de suite, voir la section E.
 | E3 | Cocher « Rejoindre le Groupe WhatsApp des nouvelles personnes » | Le numéro de l'accueil est rappelé, avec un champ facultatif pour un autre numéro |
 | E4 | Envoyer, puis ouvrir la fiche dans le dashboard | « Inscrit lors de : {nom de l'événement} » |
 | E5 | Filtrer la liste des visiteurs sur l'événement | Seules les personnes de l'événement apparaissent, et l'export les reprend avec la colonne « Événement » |
+| E5-bis | Cliquer sur « N inscrits » dans la liste des événements | La liste des visiteurs s'ouvre déjà filtrée sur cet événement |
 | E6 | Revenir au culte suivant par le QR **habituel** | La personne enchaîne bien sur sa **deuxième visite** |
 | E7 | Désactiver l'événement, rouvrir son lien | « Ce lien n'est plus actif », avec un lien vers le formulaire habituel |
 | E8 | Imprimer l'affiche depuis la page Événements | Le nom de l'événement y figure, et le QR mène bien à `/e/{slug}` |
@@ -80,6 +81,7 @@ jour, volontairement). Pour les tester tout de suite, voir la section E.
 | B10 | Modifier commune/quartier | Enregistré |
 | B11 | Bouton « Convertir en membre » sur un visiteur à 1 visite | Désactivé, avec l'explication |
 | B12 | Exports CSV, Excel, PDF | Les trois se téléchargent et s'ouvrent ; les accents sont corrects |
+| B12-bis | Ouvrir l'export PDF | Sept colonnes, aucune date ni aucun numéro coupé en deux ; sous chaque nom, l'origine ; effectif en gros à droite du titre |
 | B13 | Paramètres → verset → changer | La page publique `/qrcode` affiche le nouveau verset |
 | B14 | Paramètres → rotation des familles | Les 12 mois s'affichent, modifiables |
 | B15 | Paramètres → changer votre mot de passe | Vos autres sessions sont déconnectées |

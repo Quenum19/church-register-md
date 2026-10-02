@@ -151,10 +151,11 @@ describe('contenu', function (): void {
             ->toContain(EventFormExport::WHATSAPP)
             ->toContain('Numéro WhatsApp, s\'il est différent du téléphone')
             ->toContain(e(EventFormExport::CONSENT))
-            // La mention d'information reste sur la fiche, en petit, au pied de page.
-            ->toContain(e(EventFormExport::NOTICE))
-            // Ni date ni signature : la case cochée fait foi, comme à l'écran.
-            ->not->toContain('Signature');
+            // Ni date, ni signature, ni mention de conservation : la case cochée fait foi,
+            // comme à l'écran, et la fiche reste aérée.
+            ->not->toContain('Signature')
+            ->not->toContain('24 mois')
+            ->not->toContain('conservées');
 
         // Champs écrits à la main sur des lignes, et non dans des cases à un chiffre :
         // une ligne par champ libre (nom, téléphone, commune, quartier, nom du membre,

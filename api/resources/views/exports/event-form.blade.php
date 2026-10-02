@@ -65,7 +65,6 @@
                    font-size: 9pt; color: #6B7280; }
         .foot .qr img { width: 20mm; }
         .foot .url { color: #6B1F8A; }
-        .notice { font-size: 8pt; color: #6B7280; padding-top: 1mm; }
     </style>
 </head>
 <body>
@@ -167,7 +166,6 @@
             <td style="width: 84%; padding-left: 4mm">
                 {{ $qrHint }}
                 <div class="url">{{ $url }}</div>
-                <div class="notice">{{ $notice }}</div>
             </td>
         </tr>
     </table>

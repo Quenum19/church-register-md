@@ -1,5 +1,6 @@
 import { clsx } from 'clsx'
 import { useState } from 'react'
+import { Link } from 'react-router'
 import type { ChurchEvent } from '../../../shared/api-types'
 import { useDeleteEvent, useEvents, useUpdateEvent } from '../../api/events'
 import { useCan } from '../../auth/context'
@@ -10,7 +11,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, ErrorState, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { useToast } from '../../components/toast/context'
-import { buttonClass, tableCellClass, tableHeadClass } from '../../components/styles'
+import { buttonClass, linkClass, tableCellClass, tableHeadClass } from '../../components/styles'
 import { copyText } from '../../lib/clipboard'
 import { errorMessage } from '../../lib/errors'
 import { formatDate, formatNumber } from '../../lib/format'
@@ -19,6 +20,28 @@ import { EventPosterPanel } from './EventPosterPanel'
 
 function registrationsLabel(event: ChurchEvent): string {
   return `${formatNumber(event.visitors_count)} inscrit${event.visitors_count > 1 ? 's' : ''}`
+}
+
+/**
+ * Les inscrits d'un événement ouvrent la liste des visiteurs déjà filtrée sur lui : c'est le
+ * même filtre « Événement » que la barre de recherche, écrit dans l'URL.
+ */
+function RegistrationsLink({ event }: { event: ChurchEvent }) {
+  const label = registrationsLabel(event)
+
+  if (event.visitors_count === 0) {
+    return <span className="text-gray-700">{label}</span>
+  }
+
+  return (
+    <Link
+      to={`/admin/visiteurs?event_id=${event.id}`}
+      className={linkClass}
+      aria-label={`Voir les ${label} de ${event.name}`}
+    >
+      {label}
+    </Link>
+  )
 }
 
 /** Fiche de présence papier (PDF) d'un événement ; le cookie de session suffit. */
@@ -202,7 +225,9 @@ export function EventsPage() {
                     <td className={tableCellClass}>
                       <ActiveBadge event={event} />
                     </td>
-                    <td className={clsx(tableCellClass, 'whitespace-nowrap')}>{registrationsLabel(event)}</td>
+                    <td className={clsx(tableCellClass, 'whitespace-nowrap')}>
+                      <RegistrationsLink event={event} />
+                    </td>
                     <td className={tableCellClass}>
                       <RowActions
                         event={event}
@@ -226,7 +251,8 @@ export function EventsPage() {
                   <ActiveBadge event={event} />
                 </div>
                 <p className="mt-1 text-sm text-gray-800">
-                  {event.event_date ? formatDate(event.event_date) : 'Date non fixée'} · {registrationsLabel(event)}
+                  {event.event_date ? formatDate(event.event_date) : 'Date non fixée'} ·{' '}
+                  <RegistrationsLink event={event} />
                 </p>
                 <p className="mt-2 text-sm">
                   <EventLink event={event} />

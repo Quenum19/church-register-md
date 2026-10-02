@@ -33,7 +33,7 @@ class VisitorExport
         'Quartier',
         'Statut',
         'Nombre de visites',
-        '1re visite',
+        'Première visite',
         'Dernière visite',
         "Familles d'accueil",
         'Source',
@@ -84,11 +84,11 @@ class VisitorExport
         }
 
         if ($query->from !== null && $query->to !== null) {
-            $filters[] = '1re visite du '.$this->day($query->from).' au '.$this->day($query->to);
+            $filters[] = 'Première visite du '.$this->day($query->from).' au '.$this->day($query->to);
         } elseif ($query->from !== null) {
-            $filters[] = '1re visite à partir du '.$this->day($query->from);
+            $filters[] = 'Première visite à partir du '.$this->day($query->from);
         } elseif ($query->to !== null) {
-            $filters[] = "1re visite jusqu'au ".$this->day($query->to);
+            $filters[] = "Première visite jusqu'au ".$this->day($query->to);
         }
 
         if ($query->search !== null) {
@@ -107,11 +107,28 @@ class VisitorExport
     }
 
     /**
-     * Lignes de données (sans en-tête), lues par blocs.
+     * Lignes de données (sans en-tête), lues par blocs : les valeurs de chaque fiche, dans
+     * l'ordre de HEADINGS. Format des exports tabulaires (CSV, Excel).
      *
      * @return Generator<int, list<int|string>>
      */
     public function rows(VisitorListQuery $query): Generator
+    {
+        foreach ($this->records($query) as $record) {
+            yield array_values($record);
+        }
+    }
+
+    /**
+     * Mêmes données que rows(), mais indexées par nom de champ : l'export PDF compose une mise
+     * en page (nom et origine dans la même cellule, WhatsApp sous le téléphone…) et a besoin de
+     * désigner les champs, pas de leur rang.
+     *
+     * Les clés suivent l'ordre de HEADINGS : `array_values()` redonne exactement une ligne CSV.
+     *
+     * @return Generator<int, array{name: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, visits: int, first: string, last: string, families: string, source: string, invitedBy: string, event: string}>
+     */
+    public function records(VisitorListQuery $query): Generator
     {
         $families = [];
 
@@ -133,16 +150,16 @@ class VisitorExport
             ->lazy($this->chunkSize);
 
         foreach ($visitors as $visitor) {
-            yield $this->row($visitor, $families, $events);
+            yield $this->record($visitor, $families, $events);
         }
     }
 
     /**
      * @param  array<int, string>  $families  noms des familles par identifiant
      * @param  array<int, string>  $events  noms des événements par identifiant
-     * @return list<int|string>
+     * @return array{name: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, visits: int, first: string, last: string, families: string, source: string, invitedBy: string, event: string}
      */
-    private function row(Visitor $visitor, array $families, array $events): array
+    private function record(Visitor $visitor, array $families, array $events): array
     {
         $hostFamilies = $visitor->visits
             ->map(static fn (Visit $visit): ?string => $visit->family_id !== null ? ($families[$visit->family_id] ?? null) : null)
@@ -152,19 +169,19 @@ class VisitorExport
             ->all();
 
         return [
-            $visitor->full_name,
-            PhoneNumberService::formatInternational($visitor->phone),
-            $visitor->whatsapp !== null ? PhoneNumberService::formatInternational($visitor->whatsapp) : '',
-            $visitor->commune,
-            $visitor->quartier,
-            $this->status($visitor->status),
-            (int) $visitor->visits_count,
-            $this->date($visitor->visits_min_visit_date),
-            $this->date($visitor->visits_max_visit_date),
-            implode(', ', $hostFamilies),
-            $this->source($visitor),
-            $visitor->invited_by ?? '',
-            $this->event($visitor, $events),
+            'name' => $visitor->full_name,
+            'phone' => PhoneNumberService::formatInternational($visitor->phone),
+            'whatsapp' => $visitor->whatsapp !== null ? PhoneNumberService::formatInternational($visitor->whatsapp) : '',
+            'commune' => $visitor->commune,
+            'quartier' => $visitor->quartier,
+            'status' => $this->status($visitor->status),
+            'visits' => (int) $visitor->visits_count,
+            'first' => $this->date($visitor->visits_min_visit_date),
+            'last' => $this->date($visitor->visits_max_visit_date),
+            'families' => implode(', ', $hostFamilies),
+            'source' => $this->source($visitor),
+            'invitedBy' => $visitor->invited_by ?? '',
+            'event' => $this->event($visitor, $events),
         ];
     }
 

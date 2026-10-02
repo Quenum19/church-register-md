@@ -38,8 +38,6 @@ class EventFormExport
     /** Début du consentement, sur une seule ligne : sert aux tests qui lisent le texte du PDF. */
     public const CONSENT_START = "J'accepte que l'Église enregistre ces informations";
 
-    public const NOTICE = 'Réservées aux responsables de l\'Église et conservées 24 mois après votre dernière visite.';
-
     public const WHATSAPP = 'Rejoindre le Groupe WhatsApp des nouvelles personnes pour une période de 3 mois.';
 
     public const SOURCE_QUESTION = "Comment avez-vous connu l'Église ?";
@@ -97,7 +95,6 @@ class EventFormExport
             'otherLabel' => Source::Autre->label(),
             'whatsapp' => self::WHATSAPP,
             'consent' => self::CONSENT,
-            'notice' => self::NOTICE,
             'qrHint' => self::QR_HINT,
         ])->render();
     }

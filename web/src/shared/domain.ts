@@ -11,8 +11,8 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const VISITOR_STATUSES = ['prospect', 'recurrent', 'membre_potentiel', 'membre'] as const
 export type VisitorStatus = (typeof VISITOR_STATUSES)[number]
 export const STATUS_LABELS: Record<VisitorStatus, string> = {
-  prospect: '1re visite',
-  recurrent: '2e visite',
+  prospect: 'Première visite',
+  recurrent: 'Deuxième visite',
   membre_potentiel: 'Membre potentiel',
   membre: 'Membre',
 }

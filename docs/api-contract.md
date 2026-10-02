@@ -384,10 +384,17 @@ cellules commençant par `= + - @ \t \r` préfixées d'une apostrophe. XLSX : to
 un hébergement mutualisé ; message invitant à utiliser CSV/Excel). Chaque export est journalisé avec
 `meta = { filters (sans le texte recherché), rows }`. Identifiants non numériques → 404.
 
-Colonnes des trois formats, dans cet ordre : `Nom`, `Téléphone`, `WhatsApp`, `Commune`, `Quartier`,
-`Statut`, `Nombre de visites`, `1re visite`, `Dernière visite`, `Familles d'accueil`, `Source`,
+Colonnes **CSV et Excel**, dans cet ordre : `Nom`, `Téléphone`, `WhatsApp`, `Commune`, `Quartier`,
+`Statut`, `Nombre de visites`, `Première visite`, `Dernière visite`, `Familles d'accueil`, `Source`,
 `Invité(e) par`, **`Événement`** (nom de l'événement de la 1re visite, vide pour un parcours
 ordinaire). La colonne `Statut` emploie les libellés en toutes lettres (§1).
+
+Le **PDF** est un document de lecture, pas un tableur : il n'imprime que **sept colonnes**
+(`Visiteur`, `Téléphone`, `Commune / Quartier`, `Statut`, `Visites`, `Première visite`,
+`Dernière visite`) et place les six autres champs sous leur champ principal, en gris — l'origine
+(événement, puis « Invité(e) par … » ou la source) sous le nom, le second numéro WhatsApp sous le
+téléphone, la famille d'accueil sous le statut. Aucun champ n'est perdu ; un WhatsApp identique au
+téléphone n'est pas répété.
 La ligne « Filtres » des documents PDF et Excel cite le filtre `event_id`
 (« Événement : Culte spécial du 4 octobre »), comme `family_id` et les dates.
 
