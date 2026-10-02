@@ -435,7 +435,9 @@ Objet `Event` : voir §1.
 | POST | `/api/admin/events` | `events.manage` | `{ name, slug, event_date\|null, active }` → 201 `{ data: Event }` ; slug déjà pris ou hors format → 422 sur `slug` |
 | PATCH | `/api/admin/events/{id}` | `events.manage` | `{ name?, slug?, event_date?, active? }` (le **nom et le slug** sont modifiables) → `{ data: Event }` ; slug pris par un autre événement → 422 |
 | DELETE | `/api/admin/events/{id}` | `events.manage` | 204 ; **409 `event_has_visits`** si des visites y sont rattachées (message invitant à désactiver plutôt qu'à supprimer) |
-| GET | `/api/admin/reseaux-sociaux/affiche.pdf` | `visitors.view` | Affichette « Suivez-nous » (PDF A4, deux cartes à découper) : logo, QR code de la page publique `/reseaux` et liste des réseaux renseignés. Aucune donnée personnelle, pas de journalisation. |
+| GET | `/api/admin/affiche.pdf` | `visitors.view` | Affiche du QR code du formulaire habituel (**PDF A5 portrait, une page**, QR de 78 mm), nommée `affiche-qr-code.pdf` : nom de l’Église, verset, adresse publique. Format des porte-affiches de l’accueil. Aucune donnée personnelle, pas de journalisation. |
+| GET | `/api/admin/events/{id}/affiche.pdf` | `visitors.view` | Même affiche pour un culte spécial, nommée `affiche-{slug}.pdf` : nom et date de l’événement en toutes lettres, QR code du **lien dédié** `/e/{slug}`. |
+| GET | `/api/admin/reseaux-sociaux/affiche.pdf` | `visitors.view` | Affichette « Suivez-nous » (**PDF A5 portrait, une page**, QR de 78 mm) : logo, QR code de la page publique `/reseaux` et liste des réseaux renseignés. Aucune donnée personnelle, pas de journalisation. |
 | GET | `/api/admin/events/{id}/formulaire.pdf` | `visitors.view` | Fiche de présence papier vierge, **une par page A4**, nommée `fiche-presence-{slug}.pdf`. Reprend les champs du formulaire allégé sur des lignes manuscrites, avec le logo, le nom et la date de l'événement et son QR code. Aucune donnée personnelle, donc pas de journalisation d'audit. |
 
 `events.manage` est réservée au **super_admin** ; la lecture reste ouverte à `visitors.view`

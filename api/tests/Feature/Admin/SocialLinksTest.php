@@ -95,13 +95,15 @@ describe('affichette', function (): void {
         ]);
     });
 
-    it('télécharge un PDF A4 portrait de deux cartes identiques', function (): void {
+    it('télécharge une seule page A5 portrait, le format des porte-affiches', function (): void {
         $response = $this->get('/api/admin/reseaux-sociaux/affiche.pdf')->assertOk();
 
         expect($response->headers->get('Content-Type'))->toBe('application/pdf')
             ->and($response->headers->get('Content-Disposition'))->toContain(SocialPosterExport::FILENAME)
             ->and(substr((string) $response->getContent(), 0, 5))->toBe('%PDF-')
-            ->and((string) $response->getContent())->toMatch('/MediaBox \[0\.0+ 0\.0+ 595\.2\d* 841\.8\d*\]/');
+            // A5 portrait : 419,53 × 595,28 points, et une seule page.
+            ->and((string) $response->getContent())->toMatch('/MediaBox \[0\.0+ 0\.0+ 419\.5\d* 595\.2\d*\]/')
+            ->and(preg_match_all('/\/Type \/Page[^s]/', (string) $response->getContent()))->toBe(1);
     });
 
     it('encode la page publique des réseaux et cite les réseaux renseignés', function (): void {
@@ -113,7 +115,8 @@ describe('affichette', function (): void {
             ->toContain('Facebook · YouTube')
             ->toContain(SocialPosterExport::TITLE)
             // Logo et QR code embarqués, aucune ressource distante.
-            ->and(substr_count($html, 'src="data:image/png;base64,'))->toBe(4)
+            // Logo et QR code, une seule fois : l'affichette ne compte plus qu'une carte.
+            ->and(substr_count($html, 'src="data:image/png;base64,'))->toBe(2)
             ->and($html)->not->toContain('src="http');
     });
 

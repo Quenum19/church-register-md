@@ -22,6 +22,7 @@
 use App\Enums\Ability;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\EventFormController;
+use App\Http\Controllers\Admin\PosterController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('events', [EventController::class, 'index'])
@@ -34,6 +35,12 @@ Route::get('events/{event}/formulaire.pdf', EventFormController::class)
     ->whereNumber('event')
     ->can(Ability::VisitorsView->value)
     ->name('events.form');
+
+// Affiche A5 du culte spécial (QR code du lien dédié), prête à imprimer.
+Route::get('events/{event}/affiche.pdf', [PosterController::class, 'event'])
+    ->whereNumber('event')
+    ->can(Ability::VisitorsView->value)
+    ->name('events.poster');
 
 Route::middleware('can:'.Ability::EventsManage->value)->group(function (): void {
     Route::post('events', [EventController::class, 'store'])->name('events.store');

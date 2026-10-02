@@ -6,7 +6,7 @@ import { Icon } from '../../components/Icon'
 import { PosterPreview } from '../../components/PosterPreview'
 import { ErrorState, LoadingState } from '../../components/States'
 import { useToast } from '../../components/toast/context'
-import { cardClass } from '../../components/styles'
+import { buttonClass, cardClass } from '../../components/styles'
 import { useQrMatrix } from '../../hooks/useQrMatrix'
 import { copyText } from '../../lib/clipboard'
 import { downloadBlob, renderPosterPng } from '../../lib/poster'
@@ -89,7 +89,11 @@ export function EventPosterPanel({ event, onClose }: { event: ChurchEvent; onClo
               <Icon name="copy" className="size-4" />
               Copier le lien
             </Button>
-            <Button onClick={download} pending={downloading} pendingLabel="Génération…" disabled={!qr.matrix}>
+            <a href={`/api/admin/events/${event.id}/affiche.pdf`} download className={buttonClass('primary')}>
+              <Icon name="download" className="size-4" />
+              Affiche A5 (PDF)
+            </a>
+            <Button variant="secondary" onClick={download} pending={downloading} pendingLabel="Génération…" disabled={!qr.matrix}>
               <Icon name="download" className="size-4" />
               Télécharger en PNG
             </Button>

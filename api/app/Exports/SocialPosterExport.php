@@ -15,9 +15,9 @@ use Throwable;
  * Affichette « Suivez-nous » à poser sur les tables : un QR code qui mène à la page publique
  * des réseaux sociaux de l'Église (/reseaux).
  *
- * Deux cartes identiques par page A4, séparées par un trait de coupe : on imprime une feuille
- * et on obtient deux supports. Chaque carte porte le logo, le nom de l'Église, le QR code,
- * l'adresse en clair et la liste des réseaux renseignés.
+ * Une page A5 — le format des porte-affiches posés sur les tables — avec le logo, le nom de
+ * l'Église, un QR code de 72 mm lisible à bout de bras, l'adresse en clair et la liste des
+ * réseaux renseignés.
  *
  * Sécurité identique aux autres exports : vue Blade en `{{ }}` uniquement, dompdf sans PHP,
  * sans JavaScript et sans ressource distante ; logo et QR code intégrés en data URI.
@@ -51,7 +51,7 @@ class SocialPosterExport
             'isFontSubsettingEnabled' => true,
         ])
             ->loadHTML($this->html())
-            ->setPaper('a4', 'portrait');
+            ->setPaper('a5', 'portrait');
 
         return $pdf->download(self::FILENAME)->header('Cache-Control', 'no-store, private');
     }

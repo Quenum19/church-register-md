@@ -85,6 +85,9 @@ jour, volontairement). Pour les tester tout de suite, voir la section E.
 | B15 | Paramètres → changer votre mot de passe | Vos autres sessions sont déconnectées |
 | B16 | Paramètres → activer la double authentification | QR à scanner (Google Authenticator, Authy), puis code demandé à la connexion suivante |
 | B17 | Page QR code → télécharger le PNG et imprimer | L'affiche est correcte et lisible |
+| B17-bis | Page QR code → **Affiche A5 (PDF)** | Une page A5, QR de 78 mm, nom de l'église et verset ; se scanne depuis le papier |
+| B17-ter | Événements → QR code d'un culte → **Affiche A5 (PDF)** | Même affiche au nom et à la date du culte, QR vers `/e/{slug}` |
+| B17-quater | Paramètres → Réseaux sociaux → **Affichette A5 (PDF)** | Une page A5 : logo, « Suivez-nous », QR vers `/reseaux`, réseaux renseignés |
 | B18 | Journal d'audit | Vos actions ci-dessus y figurent |
 | B19 | Refaire B2 à B8 **sur téléphone** | Menu en tiroir, tableaux en cartes, rien ne déborde |
 

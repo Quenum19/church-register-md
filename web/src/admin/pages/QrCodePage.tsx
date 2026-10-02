@@ -69,7 +69,11 @@ export function QrCodePage() {
           <div className="flex flex-col gap-6 print:hidden">
             <Card title="Actions">
               <div className="flex flex-col gap-2">
-                <Button onClick={download} pending={downloading} pendingLabel="Génération…" disabled={!qr.matrix}>
+                <a href="/api/admin/affiche.pdf" download className={buttonClass('primary')}>
+                  <Icon name="download" className="size-4" />
+                  Affiche A5 (PDF)
+                </a>
+                <Button variant="secondary" onClick={download} pending={downloading} pendingLabel="Génération…" disabled={!qr.matrix}>
                   <Icon name="download" className="size-4" />
                   Télécharger en PNG
                 </Button>

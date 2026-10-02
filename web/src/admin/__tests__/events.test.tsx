@@ -234,6 +234,17 @@ describe('événements — lien et affiche', () => {
     expect(link).toHaveAttribute('href', '/api/admin/events/7/formulaire.pdf')
     expect(link).toHaveAttribute('download')
   })
+
+  it('propose l’affiche A5 du QR code en PDF, prête à imprimer', async () => {
+    eventsServer([makeEvent()])
+    const { user } = renderAdmin('/admin/evenements')
+
+    await user.click((await eventRows()).getByRole('button', { name: /^QR code/ }))
+
+    const link = await screen.findByRole('link', { name: 'Affiche A5 (PDF)' })
+    expect(link).toHaveAttribute('href', '/api/admin/events/7/affiche.pdf')
+    expect(link).toHaveAttribute('download')
+  })
 })
 
 describe('événements — droits', () => {

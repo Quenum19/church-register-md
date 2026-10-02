@@ -20,6 +20,7 @@
 
 use App\Http\Controllers\Admin\FamilyController;
 use App\Http\Controllers\Admin\MemberController;
+use App\Http\Controllers\Admin\PosterController;
 use App\Http\Controllers\Admin\RotationController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SocialPosterController;
@@ -77,7 +78,12 @@ Route::put('rotations/{year}/{month}', [RotationController::class, 'update'])
 Route::get('settings', [SettingsController::class, 'show'])->can('visitors.view')->name('settings.show');
 Route::put('settings', [SettingsController::class, 'update'])->can('settings.update')->name('settings.update');
 
-// Affichette « Suivez-nous » (PDF) : deux cartes par page A4 à poser sur les tables.
+// Affiche A5 du QR code du formulaire habituel, prête à imprimer.
+Route::get('affiche.pdf', [PosterController::class, 'visit'])
+    ->can('visitors.view')
+    ->name('poster');
+
+// Affichette « Suivez-nous » (PDF A5) à poser sur les tables.
 Route::get('reseaux-sociaux/affiche.pdf', SocialPosterController::class)
     ->can('visitors.view')
     ->name('social.poster');

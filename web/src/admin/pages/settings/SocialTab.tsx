@@ -142,14 +142,14 @@ function SocialPoster({ settings }: { settings: Settings }) {
           Copier le lien
         </button>
         <a href="/api/admin/reseaux-sociaux/affiche.pdf" download className={buttonClass('secondary', 'sm')}>
-          Affichette de table (PDF)
+          Affichette A5 (PDF)
         </a>
         <a href={pageUrl} target="_blank" rel="noopener noreferrer" className={buttonClass('ghost', 'sm')}>
           Voir la page
         </a>
       </div>
       <p className="text-sm text-gray-700">
-        L’affichette contient deux cartes par page A4 : imprimez, découpez, et posez-les sur les tables.
+        L’affichette est au format A5, celui des porte-affiches posés sur les tables.
       </p>
     </div>
   )
