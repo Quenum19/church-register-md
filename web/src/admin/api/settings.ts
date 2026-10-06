@@ -38,6 +38,16 @@ export function useFamilies() {
   })
 }
 
+/** Congrégations de l’Église (appartenance de l’invitant), distinctes des familles de service. */
+export function useCongregations() {
+  return useQuery({
+    queryKey: queryKeys.congregations,
+    queryFn: async ({ signal }) =>
+      (await adminFetch<{ data: Family[] }>('/api/admin/congregations', { signal })).data,
+    staleTime: 10 * 60_000,
+  })
+}
+
 export function useRotations(from: string, months: number) {
   return useQuery({
     queryKey: queryKeys.rotations.range(from, months),

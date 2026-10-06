@@ -287,7 +287,7 @@ function VisitorView({ visitor, back }: { visitor: VisitorDetail; back: BackStat
               </Detail>
               {visitor.invited_by && <Detail label="Invité(e) par">{visitor.invited_by}</Detail>}
               {visitor.inviter_congregation && (
-                <Detail label="Congrégation de l’invitant">{visitor.inviter_congregation}</Detail>
+                <Detail label="Congrégation de l’invitant">{visitor.inviter_congregation.name}</Detail>
               )}
               {visitor.inviter_family && <Detail label="Famille de l’invitant">{visitor.inviter_family.name}</Detail>}
               <Detail label="Consentement">

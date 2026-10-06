@@ -29,13 +29,14 @@ use Illuminate\Support\Carbon;
  * @property Source $source
  * @property string|null $source_other
  * @property string|null $invited_by
- * @property string|null $inviter_congregation
+ * @property int|null $inviter_congregation_id
  * @property int|null $inviter_family_id
  * @property bool $wants_whatsapp_group
  * @property Carbon|null $consent_at
  * @property VisitorStatus $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Congregation|null $inviterCongregation
  * @property-read Family|null $inviterFamily
  * @property-read Member|null $member
  * @property-read Collection<int, Visit> $visits
@@ -61,7 +62,7 @@ class Visitor extends Model
         'source',
         'source_other',
         'invited_by',
-        'inviter_congregation',
+        'inviter_congregation_id',
         'inviter_family_id',
         'wants_whatsapp_group',
         'consent_at',
@@ -83,6 +84,7 @@ class Visitor extends Model
         return [
             'source' => Source::class,
             'status' => VisitorStatus::class,
+            'inviter_congregation_id' => 'integer',
             'inviter_family_id' => 'integer',
             'wants_whatsapp_group' => 'boolean',
             'consent_at' => 'datetime',
@@ -123,6 +125,16 @@ class Visitor extends Model
     public function inviterFamily(): BelongsTo
     {
         return $this->belongsTo(Family::class, 'inviter_family_id');
+    }
+
+    /**
+     * Congrégation de la personne qui a invité (distincte de sa famille de service).
+     *
+     * @return BelongsTo<Congregation, $this>
+     */
+    public function inviterCongregation(): BelongsTo
+    {
+        return $this->belongsTo(Congregation::class, 'inviter_congregation_id');
     }
 
     public function isMember(): bool

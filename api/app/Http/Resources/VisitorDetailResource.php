@@ -17,6 +17,7 @@ class VisitorDetailResource extends VisitorSummaryResource
 {
     /** @var list<string> */
     public const RELATIONS = [
+        'inviterCongregation:id,name',
         'inviterFamily:id,name',
         'visits.family:id,name',
         'visits.event:id,name,slug',
@@ -36,7 +37,7 @@ class VisitorDetailResource extends VisitorSummaryResource
             'source' => $visitor->source->value,
             'source_other' => $visitor->source_other,
             'invited_by' => $visitor->invited_by,
-            'inviter_congregation' => $visitor->inviter_congregation,
+            'inviter_congregation' => CongregationResource::ref($visitor->inviterCongregation),
             'inviter_family' => FamilyResource::ref($visitor->inviterFamily),
             'wants_whatsapp_group' => $visitor->wants_whatsapp_group,
             'consent_at' => self::timestamp($visitor->consent_at),

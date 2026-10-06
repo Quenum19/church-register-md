@@ -87,6 +87,7 @@ it('expose exactement les routes du contrat, avec leur authentification et leur 
         'PATCH /api/admin/events/{event} auth events.manage',
         'DELETE /api/admin/events/{event} auth events.manage',
         'GET /api/admin/families auth visitors.view',
+        'GET /api/admin/congregations auth visitors.view',
         'GET /api/admin/rotations auth visitors.view',
         'PUT /api/admin/rotations/{year}/{month} auth rotations.manage',
         'GET /api/admin/settings auth visitors.view',

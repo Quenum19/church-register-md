@@ -92,10 +92,10 @@ describe('fiche visiteur — contenu et navigation', () => {
   })
 
   it('montre la congrégation de l’invitant, et l’omet quand elle est inconnue', async () => {
-    detailServer('lecteur', { inviter_congregation: 'Yopougon' })
+    detailServer('lecteur', { inviter_congregation: { id: 8, name: 'Voix de la Destinée' } })
     const { unmount } = renderAdmin('/admin/visiteurs/5')
     expect(await screen.findByText('Congrégation de l’invitant')).toBeInTheDocument()
-    expect(screen.getByText('Yopougon')).toBeInTheDocument()
+    expect(screen.getByText('Voix de la Destinée')).toBeInTheDocument()
     unmount()
 
     detailServer('lecteur', { inviter_congregation: null })

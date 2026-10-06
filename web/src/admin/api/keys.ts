@@ -35,6 +35,7 @@ export const queryKeys = {
   users: ['admin', 'users'] as const,
   settings: ['admin', 'settings'] as const,
   families: ['admin', 'families'] as const,
+  congregations: ['admin', 'congregations'] as const,
   rotations: {
     all: ['admin', 'rotations'] as const,
     range: (from: string, months: number) => ['admin', 'rotations', from, months] as const,

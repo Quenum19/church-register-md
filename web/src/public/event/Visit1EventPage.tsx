@@ -18,6 +18,7 @@ import { CountrySelect, TextField } from '../ui/Field'
 import { visitTitle } from '../ui/text'
 import { Checkbox } from '../visit/FormFields'
 import { EVENT_SOURCES, visit1EventSchema, type Visit1EventValues } from '../visit/schemas'
+import { useCongregations } from '../visit/useCongregations'
 import { useFamilies } from '../visit/useFamilies'
 import { Visit1IdentityFields } from '../visit/Visit1Fields'
 import { useVisitForm } from '../visit/useVisitForm'
@@ -29,7 +30,7 @@ const FIELD_ORDER = [
   'quartier',
   'source',
   'invited_by',
-  'inviter_congregation',
+  'inviter_congregation_id',
   'inviter_family_id',
   'source_other',
   'wants_whatsapp_group',
@@ -43,7 +44,7 @@ const textLink = `rounded font-bold text-church-purple underline underline-offse
 const resolver = zodResolver(visit1EventSchema)
 
 const DEPENDENTS = {
-  source: ['invited_by', 'inviter_congregation', 'inviter_family_id', 'source_other'],
+  source: ['invited_by', 'inviter_congregation_id', 'inviter_family_id', 'source_other'],
   wants_whatsapp_group: ['whatsapp_number'],
   whatsapp_country: ['whatsapp_number'],
 } satisfies Partial<Record<keyof Visit1EventValues, (keyof Visit1EventValues)[]>>
@@ -59,7 +60,7 @@ function toRequest(v: Visit1EventValues) {
     source: v.source as Source,
     source_other: v.source === 'autre' ? v.source_other.trim() : null,
     invited_by: invited ? v.invited_by.trim() : null,
-    inviter_congregation: invited && v.inviter_congregation.trim() ? v.inviter_congregation.trim() : null,
+    inviter_congregation_id: invited && v.inviter_congregation_id ? Number(v.inviter_congregation_id) : null,
     inviter_family_id: invited && v.inviter_family_id ? Number(v.inviter_family_id) : null,
     // Contrat §2 inchangé : un autre numéro renseigne `whatsapp`, sinon c'est celui de
     // l'accueil (`whatsapp_same_as_phone`). Sans demande de groupe, rien n'est affirmé.
@@ -83,7 +84,7 @@ export default function Visit1EventPage({ event }: { event: JourneyEvent }) {
     source: '',
     source_other: '',
     invited_by: '',
-    inviter_congregation: '',
+    inviter_congregation_id: '',
     inviter_family_id: '',
     whatsapp_country: identified?.country ?? 'CI',
     whatsapp_number: '',
@@ -91,6 +92,7 @@ export default function Visit1EventPage({ event }: { event: JourneyEvent }) {
     consent: false,
   }))
   const families = useFamilies()
+  const congregations = useCongregations()
 
   const visit = useVisitForm<Visit1EventValues>({
     step: 1,
@@ -135,7 +137,13 @@ export default function Visit1EventPage({ event }: { event: JourneyEvent }) {
       focusKey={visit.focusKey}
       submitError={visit.submitError}
     >
-      <Visit1IdentityFields form={form} errorOf={errorOf} sources={EVENT_SOURCES} families={families} />
+      <Visit1IdentityFields
+        form={form}
+        errorOf={errorOf}
+        sources={EVENT_SOURCES}
+        families={families}
+        congregations={congregations}
+      />
 
       <div className="flex min-w-0 flex-col gap-4">
         <Checkbox

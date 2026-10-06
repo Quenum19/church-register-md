@@ -2,9 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import type { VisitorFilters } from '../../../shared/api-types'
+import { NO_CONGREGATION, type VisitorFilters } from '../../../shared/api-types'
 import { useEvents } from '../../api/events'
-import { useFamilies } from '../../api/settings'
+import { useCongregations, useFamilies } from '../../api/settings'
 import { Button } from '../../components/Button'
 import { Field } from '../../components/Field'
 import { Icon } from '../../components/Icon'
@@ -16,7 +16,7 @@ const searchSchema = z.object({
 })
 
 export type FilterChange = Partial<
-  Record<'search' | 'status' | 'family_id' | 'event_id' | 'from' | 'to' | 'sort', string | undefined>
+  Record<'search' | 'status' | 'family_id' | 'congregation_id' | 'event_id' | 'from' | 'to' | 'sort', string | undefined>
 >
 
 interface VisitorFiltersBarProps {
@@ -29,6 +29,7 @@ interface VisitorFiltersBarProps {
 /** Filtres combinables (ET). La recherche est validée à l'envoi ; les listes et dates s'appliquent au changement. */
 export function VisitorFiltersBar({ filters, onChange, onReset, invalidPeriod }: VisitorFiltersBarProps) {
   const families = useFamilies()
+  const congregations = useCongregations()
   const events = useEvents()
   const {
     register,
@@ -98,6 +99,25 @@ export function VisitorFiltersBar({ filters, onChange, onReset, invalidPeriod }:
               {filters.family_id && !families.data?.some((f) => f.id === filters.family_id) && (
                 <option value={filters.family_id}>Famille n° {filters.family_id}</option>
               )}
+            </select>
+          )}
+        </Field>
+        <Field label="Congrégation de l’invitant">
+          {(control) => (
+            <select
+              {...control}
+              value={filters.congregation_id ?? ''}
+              onChange={(e) => onChange({ congregation_id: e.target.value || undefined })}
+              className={inputClass}
+            >
+              <option value="">Toutes les congrégations</option>
+              {congregations.data?.map((congregation) => (
+                <option key={congregation.id} value={congregation.id}>
+                  {congregation.name}
+                </option>
+              ))}
+              {/* Pour retrouver les fiches où elle reste à renseigner. */}
+              <option value={NO_CONGREGATION}>Sans congrégation</option>
             </select>
           )}
         </Field>

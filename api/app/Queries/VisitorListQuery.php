@@ -3,7 +3,9 @@
 namespace App\Queries;
 
 use App\Enums\VisitorStatus;
+use App\Models\Congregation;
 use App\Models\Visitor;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
@@ -21,6 +23,9 @@ final class VisitorListQuery
 
     public const STATUS_NON_MEMBER = 'non_membre';
 
+    /** Valeur du filtre « congrégation » désignant les visiteurs dont elle n'est pas renseignée. */
+    public const NO_CONGREGATION = 'aucune';
+
     public const DEFAULT_SORT = '-created_at';
 
     /** Tris autorisés (liste blanche). */
@@ -33,6 +38,8 @@ final class VisitorListQuery
         public readonly ?string $search = null,
         public readonly ?string $status = null,
         public readonly ?int $familyId = null,
+        public readonly ?int $congregationId = null,
+        public readonly bool $withoutCongregation = false,
         public readonly ?int $eventId = null,
         public readonly ?string $from = null,
         public readonly ?string $to = null,
@@ -50,6 +57,16 @@ final class VisitorListQuery
             'search' => ['sometimes', 'nullable', 'string', 'max:'.self::SEARCH_MAX_LENGTH],
             'status' => ['sometimes', 'nullable', 'string', Rule::in([...VisitorStatus::values(), self::STATUS_NON_MEMBER])],
             'family_id' => ['sometimes', 'nullable', 'integer', 'min:1', 'exists:families,id'],
+            // Un identifiant de congrégation, ou « aucune » pour celles qui restent à renseigner.
+            'congregation_id' => ['sometimes', 'nullable', static function (string $attribute, mixed $value, Closure $fail): void {
+                if ($value === self::NO_CONGREGATION) {
+                    return;
+                }
+
+                if (! is_numeric($value) || (int) $value < 1 || ! Congregation::query()->whereKey((int) $value)->exists()) {
+                    $fail('La congrégation sélectionnée est invalide.');
+                }
+            }],
             'event_id' => ['sometimes', 'nullable', 'integer', 'min:1', 'exists:events,id'],
             'from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'to' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
@@ -68,6 +85,7 @@ final class VisitorListQuery
             'search' => 'recherche',
             'status' => 'statut',
             'family_id' => 'famille',
+            'congregation_id' => 'congrégation',
             'event_id' => 'événement',
             'from' => 'date de début',
             'to' => 'date de fin',
@@ -85,12 +103,16 @@ final class VisitorListQuery
             : null;
 
         $familyId = $validated['family_id'] ?? null;
+        $congregation = $validated['congregation_id'] ?? null;
+        $withoutCongregation = $congregation === self::NO_CONGREGATION;
         $eventId = $validated['event_id'] ?? null;
 
         return new self(
             search: $string('search'),
             status: $string('status'),
             familyId: is_numeric($familyId) ? (int) $familyId : null,
+            congregationId: ! $withoutCongregation && is_numeric($congregation) ? (int) $congregation : null,
+            withoutCongregation: $withoutCongregation,
             eventId: is_numeric($eventId) ? (int) $eventId : null,
             from: $string('from'),
             to: $string('to'),
@@ -122,6 +144,15 @@ final class VisitorListQuery
             $query->whereHas('visits', function (Builder $visits) use ($familyId): void {
                 $visits->where('family_id', $familyId);
             });
+        }
+
+        // Visiteurs dont l'invitant appartient à cette congrégation : une colonne du visiteur,
+        // donc une simple égalité (aucune jointure, contrairement aux filtres par visite).
+        // « aucune » sort ceux qui restent à compléter à la main.
+        if ($this->withoutCongregation) {
+            $query->whereNull('inviter_congregation_id');
+        } elseif ($this->congregationId !== null) {
+            $query->where('inviter_congregation_id', $this->congregationId);
         }
 
         // Visiteurs ayant AU MOINS UNE visite rattachée à cet événement (en pratique la 1re,
@@ -200,6 +231,7 @@ final class VisitorListQuery
             'search' => $this->search !== null,
             'status' => $this->status,
             'family_id' => $this->familyId,
+            'congregation_id' => $this->withoutCongregation ? self::NO_CONGREGATION : $this->congregationId,
             'event_id' => $this->eventId,
             'from' => $this->from,
             'to' => $this->to,

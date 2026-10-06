@@ -18,6 +18,7 @@
 |
 */
 
+use App\Http\Controllers\Admin\CongregationController;
 use App\Http\Controllers\Admin\FamilyController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\PosterController;
@@ -68,6 +69,9 @@ Route::get('exports/visitors.pdf', [VisitorExportController::class, 'pdf'])
 
 // Familles et rotation.
 Route::get('families', FamilyController::class)->can('visitors.view')->name('families.index');
+
+// Congrégations (appartenance de l'invitant), pour le filtre et la fiche visiteur.
+Route::get('congregations', CongregationController::class)->can('visitors.view')->name('congregations.index');
 Route::get('rotations', [RotationController::class, 'index'])->can('visitors.view')->name('rotations.index');
 Route::put('rotations/{year}/{month}', [RotationController::class, 'update'])
     ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])

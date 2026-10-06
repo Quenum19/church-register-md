@@ -154,7 +154,7 @@ describe('Formulaire de la première visite', () => {
     await fillIdentity(user)
     await user.click(screen.getByRole('radio', { name: 'Invité(e) par un membre' }))
     await user.type(screen.getByLabelText('Nom de la personne qui vous a invité(e)'), 'Koffi Adjoua')
-    await user.type(screen.getByLabelText(/Sa congrégation/), ' Yopougon ')
+    await user.selectOptions(await screen.findByRole('combobox', { name: /Sa congrégation/ }), '8')
     await user.selectOptions(await screen.findByRole('combobox', { name: /Sa famille/ }), '4')
     await user.click(screen.getByRole('radio', { name: "J'utilise un autre numéro WhatsApp" }))
     await user.selectOptions(screen.getByLabelText('Pays du numéro WhatsApp'), 'FR')
@@ -179,7 +179,7 @@ describe('Formulaire de la première visite', () => {
         source: 'invite_membre',
         source_other: null,
         invited_by: 'Koffi Adjoua',
-        inviter_congregation: 'Yopougon',
+        inviter_congregation_id: 8,
         inviter_family_id: 4,
         whatsapp: { country: 'FR', number: '0612345678' },
         whatsapp_same_as_phone: false,
@@ -202,7 +202,7 @@ describe('Formulaire de la première visite', () => {
     expect(api.callsTo('POST', '/api/public/visits')[0].body?.answers).toMatchObject({
       source: 'reseaux_sociaux',
       invited_by: null,
-      inviter_congregation: null,
+      inviter_congregation_id: null,
       inviter_family_id: null,
       whatsapp: null,
       whatsapp_same_as_phone: true,

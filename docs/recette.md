@@ -55,7 +55,7 @@ QR du lien dédié. Un culte désactivé bascule sur le formulaire habituel et l
 |---|---|---|
 | E1 | Ouvrir le lien de l'événement | Le nom de l'événement s'affiche sur l'écran d'identification |
 | E2 | Aller au formulaire | Version allégée : **deux** origines seulement, une **seule** case WhatsApp |
-| E2-bis | Cocher « Invité(e) par un membre » | Son nom, **sa congrégation** (facultative) et sa famille apparaissent ; la fiche du visiteur les reprend |
+| E2-bis | Cocher « Invité(e) par un membre » | Son nom, **sa congrégation** (liste des 11, facultative) et sa famille de service apparaissent ; la fiche du visiteur les reprend |
 | E3 | Cocher « Rejoindre le Groupe WhatsApp des nouvelles personnes » | Le numéro de l'accueil est rappelé, avec un champ facultatif pour un autre numéro |
 | E4 | Envoyer, puis ouvrir la fiche dans le dashboard | « Inscrit lors de : {nom de l'événement} » |
 | E5 | Filtrer la liste des visiteurs sur l'événement | Seules les personnes de l'événement apparaissent, et l'export les reprend avec la colonne « Événement » |
@@ -78,6 +78,8 @@ QR du lien dédié. Un culte désactivé bascule sur le formulaire habituel et l
 | B3 | Accueil | Total, nouveaux du jour, visites du mois, famille du mois (**Force** en septembre 2026) |
 | B4 | Visiteurs : rechercher `+225 07` | Résultats, **aucune erreur** (l'ancienne version plantait) |
 | B5 | Combiner statut + famille + période + recherche | Les filtres s'appliquent **ensemble** |
+| B5-bis | Filtrer sur **Congrégation de l'invitant** | Seules les personnes invitées par cette congrégation s'affichent ; l'export reprend le filtre, de quoi sortir une liste par congrégation |
+| B5-ter | Choisir **Sans congrégation** | Les fiches où elle reste à renseigner ressortent ; on la complète depuis « Modifier » |
 | B6 | « Tous sauf membres » | Aucun membre dans la liste |
 | B7 | Pagination, puis retour depuis une fiche | Les filtres et la page sont conservés |
 | B8 | Fiche visiteur | Coordonnées, frise des visites, réponses lisibles en clair |

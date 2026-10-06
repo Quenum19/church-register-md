@@ -17,7 +17,7 @@ export interface Visit1IdentityValues {
   source: string
   source_other: string
   invited_by: string
-  inviter_congregation: string
+  inviter_congregation_id: string
   inviter_family_id: string
 }
 
@@ -27,6 +27,8 @@ interface Visit1IdentityFieldsProps<T extends FieldValues & Visit1IdentityValues
   /** Origines proposées, dans l'ordre d'affichage. */
   sources: readonly Source[]
   families: FamilyRef[]
+  /** Congrégations proposées (distinctes des familles de service). */
+  congregations: FamilyRef[]
 }
 
 export function Visit1IdentityFields<T extends FieldValues & Visit1IdentityValues>({
@@ -34,6 +36,7 @@ export function Visit1IdentityFields<T extends FieldValues & Visit1IdentityValue
   errorOf,
   sources,
   families,
+  congregations,
 }: Visit1IdentityFieldsProps<T>) {
   const { register, control, watch } = form
   // `T` contient ces clés par construction, mais TypeScript ne peut pas le déduire de `Path<T>`.
@@ -97,17 +100,33 @@ export function Visit1IdentityFields<T extends FieldValues & Visit1IdentityValue
             {...register(path('invited_by'))}
           />
           {/* L'Église compte plusieurs congrégations : savoir d'où vient l'invitant oriente
-              le suivi. Champ libre, facultatif — personne ne doit buter dessus. */}
-          <TextField
-            id="inviter_congregation"
-            label="Sa congrégation"
-            optional
-            hint="Si vous la connaissez."
-            autoComplete="off"
-            maxLength={100}
-            error={errorOf(path('inviter_congregation'))}
-            {...register(path('inviter_congregation'))}
-          />
+              le suivi. Facultatif — personne ne doit buter dessus. */}
+          {congregations.length > 0 && (
+            <Controller
+              control={control}
+              name={path('inviter_congregation_id')}
+              render={({ field }) => (
+                <SelectField
+                  id="inviter_congregation_id"
+                  label="Sa congrégation"
+                  optional
+                  error={errorOf(path('inviter_congregation_id'))}
+                  name={field.name}
+                  ref={field.ref}
+                  value={String(field.value ?? '')}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                >
+                  <option value="">Je ne sais pas</option>
+                  {congregations.map((congregation) => (
+                    <option key={congregation.id} value={String(congregation.id)}>
+                      {congregation.name}
+                    </option>
+                  ))}
+                </SelectField>
+              )}
+            />
+          )}
           {families.length > 0 && (
             <Controller
               control={control}

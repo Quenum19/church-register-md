@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Congregation;
 use App\Models\Event;
 use App\Models\User;
 use App\Models\Visitor;
@@ -205,6 +206,35 @@ it('filtre par événement : au moins une visite rattachée à cet événement',
         ->and(($this->ids)('event_id='.$culte->id.'&family_id='.$this->families['Force']->id))->toBe([$fromCulte->id])
         ->and(($this->ids)('event_id='.$culte->id.'&from=2026-09-07'))->toBe([]);
 });
+
+it('filtre par congrégation de l\x27invitant, et sort celles qui restent à renseigner', function (): void {
+    $puissance = Congregation::query()->where('name', 'Puissance')->sole();
+    $jeunesse = Congregation::query()->where('name', 'Jeunesse')->sole();
+
+    $invitedByPuissance = AdminFixtures::visitor(['2026-09-06'], [
+        'full_name' => 'Awa Koné',
+        'inviter_congregation_id' => $puissance->id,
+    ]);
+    $invitedByJeunesse = AdminFixtures::visitor(['2026-09-07'], [
+        'full_name' => 'Yao Traoré',
+        'inviter_congregation_id' => $jeunesse->id,
+    ]);
+    // Congrégation non renseignée : conservée, et retrouvable pour être complétée à la main.
+    $unknown = AdminFixtures::visitor(['2026-09-08'], ['full_name' => 'Zara Diallo']);
+
+    expect(($this->ids)('congregation_id='.$puissance->id))->toBe([$invitedByPuissance->id])
+        ->and(($this->ids)('congregation_id='.$jeunesse->id))->toBe([$invitedByJeunesse->id])
+        ->and(($this->ids)('congregation_id=aucune'))->toBe([$unknown->id])
+        // Se combine en ET avec les autres filtres.
+        ->and(($this->ids)('congregation_id='.$puissance->id.'&search=awa'))->toBe([$invitedByPuissance->id])
+        ->and(($this->ids)('congregation_id='.$puissance->id.'&search=yao'))->toBe([]);
+});
+
+it('rejette une congregation_id inconnue ou non numérique (422)', function (string $value): void {
+    $this->getJson('/api/admin/visitors?congregation_id='.$value)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['congregation_id']);
+})->with(['999999', 'Jeunesse', '0', '-1']);
 
 it('rejette un event_id inconnu ou non numérique (422)', function (string $value): void {
     $this->getJson('/api/admin/visitors?event_id='.$value)

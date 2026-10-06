@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Congregation;
 use App\Models\Family;
 use App\Models\FamilyRotation;
 use App\Models\Setting;
@@ -26,12 +27,19 @@ it('renvoie exactement la configuration du contrat', function (): void {
         ->map(fn (string $name): array => ['id' => $this->familyId($name), 'name' => $name])
         ->all();
 
+    // Les onze congrégations sont créées par la migration, dans l'ordre voulu par l'Église :
+    // les sept premières portent le nom d'une famille sans être la même appartenance.
+    $congregations = Congregation::query()->ordered()->get(['id', 'name'])
+        ->map(static fn (Congregation $congregation): array => ['id' => $congregation->id, 'name' => $congregation->name])
+        ->all();
+
     $response->assertExactJson([
         'church_name' => 'Église La Maison de la Destinée',
         'public_url' => 'https://registre.exemple.org',
         'verse' => ['ref' => 'Jean 21:17', 'text' => "Si tu m'aimes, pais mes brebis."],
         'current_family' => ['id' => $this->familyId('Force'), 'name' => 'Force'],
         'families' => $families,
+        'congregations' => $congregations,
         // Aucun réseau social renseigné par le seeder.
         'social_networks' => [],
     ]);
@@ -44,7 +52,8 @@ it('renvoie le verset personnalisé sans ses métadonnées', function (): void {
         ->assertOk()
         ->assertExactJsonStructure([
             'church_name', 'public_url', 'verse' => ['ref', 'text'],
-            'current_family' => ['id', 'name'], 'families' => ['*' => ['id', 'name']], 'social_networks',
+            'current_family' => ['id', 'name'], 'families' => ['*' => ['id', 'name']],
+            'congregations' => ['*' => ['id', 'name']], 'social_networks',
         ])
         ->assertJsonPath('verse', ['ref' => 'Psaumes 121:1', 'text' => 'Je lève mes yeux vers les montagnes.']);
 });

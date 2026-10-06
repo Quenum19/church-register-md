@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Source;
+use App\Models\Congregation;
 use App\Models\Family;
 use App\Models\Visit;
 use App\Models\Visitor;
@@ -78,6 +79,9 @@ it('applique les règles de l\'étape 1', function (array $overrides, string $fi
     'famille inexistante' => [['source' => 'invite_membre', 'invited_by' => 'Jean Kouadio', 'inviter_family_id' => 999999], 'answers.inviter_family_id', 'La famille sélectionnée est invalide.'],
     'famille non numérique' => [['source' => 'invite_membre', 'invited_by' => 'Jean Kouadio', 'inviter_family_id' => 'Force'], 'answers.inviter_family_id', 'La famille sélectionnée est invalide.'],
     'famille sans invitation' => [['source' => 'passage', 'inviter_family_id' => 1], 'answers.inviter_family_id', "La famille de l'invitant ne s'indique que pour une invitation par un membre."],
+    'congrégation inexistante' => [['source' => 'invite_membre', 'invited_by' => 'Jean Kouadio', 'inviter_congregation_id' => 999999], 'answers.inviter_congregation_id', 'La congrégation sélectionnée est invalide.'],
+    'congrégation non numérique' => [['source' => 'invite_membre', 'invited_by' => 'Jean Kouadio', 'inviter_congregation_id' => 'Jeunesse'], 'answers.inviter_congregation_id', 'La congrégation sélectionnée est invalide.'],
+    'congrégation sans invitation' => [['source' => 'passage', 'inviter_congregation_id' => 1], 'answers.inviter_congregation_id', "La congrégation de l'invitant ne s'indique que pour une invitation par un membre."],
     'WhatsApp invalide' => [['whatsapp' => ['country' => 'CI', 'number' => '0700']], 'answers.whatsapp.number', 'Le numéro WhatsApp est invalide.'],
     'WhatsApp trop long' => [['whatsapp' => ['country' => 'CI', 'number' => str_repeat('0', 33)]], 'answers.whatsapp.number', 'Le numéro WhatsApp est invalide.'],
     'WhatsApp pays inconnu' => [['whatsapp' => ['country' => 'ZZ', 'number' => '0500000000']], 'answers.whatsapp.country', 'Le pays du numéro WhatsApp est invalide.'],
@@ -112,6 +116,8 @@ it('rogne les chaînes et stocke le profil de l\'étape 1', function (): void {
         'source' => 'invite_membre',
         'invited_by' => '  Jean Kouadio  ',
         'inviter_family_id' => $this->familyId('Sagesse'),
+        // Famille de service et congrégation sont deux appartenances distinctes.
+        'inviter_congregation_id' => Congregation::query()->where('name', 'Jeunesse')->value('id'),
         'source_other' => 'ignoré car la source n\'est pas « autre »',
     ]))->assertCreated();
 
@@ -123,6 +129,7 @@ it('rogne les chaînes et stocke le profil de l\'étape 1', function (): void {
         ->and($visitor->source)->toBe(Source::InviteMembre)
         ->and($visitor->invited_by)->toBe('Jean Kouadio')
         ->and($visitor->inviter_family_id)->toBe($this->familyId('Sagesse'))
+        ->and($visitor->inviterCongregation?->name)->toBe('Jeunesse')
         ->and($visitor->source_other)->toBeNull()
         ->and($visitor->consent_at)->not->toBeNull();
 });
@@ -148,13 +155,13 @@ it('accepte « invité par un membre » sans famille ni congrégation d\'invitan
         'invited_by' => 'Jean Kouadio',
         'inviter_family_id' => null,
         // Champ laissé vide à l'écran : la congrégation de l'invitant n'est pas toujours connue.
-        'inviter_congregation' => '   ',
+        'inviter_congregation_id' => null,
     ]))->assertCreated();
 
     $visitor = Visitor::query()->sole();
 
     expect($visitor->inviter_family_id)->toBeNull()
-        ->and($visitor->inviter_congregation)->toBeNull();
+        ->and($visitor->inviter_congregation_id)->toBeNull();
 });
 
 it('stocke le WhatsApp en E.164, ou NULL s\'il est vide', function (mixed $whatsapp, ?string $expected): void {

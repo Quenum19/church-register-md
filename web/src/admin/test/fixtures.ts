@@ -157,4 +157,12 @@ export function withSession(server: MockServer, role: Role = 'super_admin') {
         ],
       },
     })
+    .on('GET', '/api/admin/congregations', {
+      body: {
+        data: [
+          { id: 1, name: 'Puissance', active: true, position: 1 },
+          { id: 8, name: 'Voix de la Destinée', active: true, position: 8 },
+        ],
+      },
+    })
 }

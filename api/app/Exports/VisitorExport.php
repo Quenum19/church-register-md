@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Enums\Source;
 use App\Enums\VisitorStatus;
+use App\Models\Congregation;
 use App\Models\Event;
 use App\Models\Family;
 use App\Models\Visit;
@@ -80,6 +81,11 @@ class VisitorExport
             $filters[] = "Famille d'accueil : ".(is_string($name) ? $name : '#'.$query->familyId);
         }
 
+        if ($query->congregationId !== null) {
+            $name = Congregation::query()->whereKey($query->congregationId)->value('name');
+            $filters[] = 'Congrégation de l\x27invitant : '.(is_string($name) ? $name : '#'.$query->congregationId);
+        }
+
         if ($query->eventId !== null) {
             $name = Event::query()->whereKey($query->eventId)->value('name');
             $filters[] = 'Événement : '.(is_string($name) ? $name : '#'.$query->eventId);
@@ -146,22 +152,30 @@ class VisitorExport
             $events[$event->id] = $event->name;
         }
 
+        // Onze congrégations : même traitement.
+        $congregations = [];
+
+        foreach (Congregation::query()->get(['id', 'name']) as $congregation) {
+            $congregations[$congregation->id] = $congregation->name;
+        }
+
         $visitors = $query->builder()
             // Seules les colonnes utiles des visites (familles d'accueil, événement), par bloc.
             ->with('visits:id,visitor_id,visit_number,family_id,event_id')
             ->lazy($this->chunkSize);
 
         foreach ($visitors as $visitor) {
-            yield $this->record($visitor, $families, $events);
+            yield $this->record($visitor, $families, $events, $congregations);
         }
     }
 
     /**
      * @param  array<int, string>  $families  noms des familles par identifiant
      * @param  array<int, string>  $events  noms des événements par identifiant
+     * @param  array<int, string>  $congregations  noms des congrégations par identifiant
      * @return array{name: string, phone: string, whatsapp: string, commune: string, quartier: string, status: string, visits: int, first: string, last: string, families: string, source: string, invitedBy: string, congregation: string, event: string}
      */
-    private function record(Visitor $visitor, array $families, array $events): array
+    private function record(Visitor $visitor, array $families, array $events, array $congregations): array
     {
         $hostFamilies = $visitor->visits
             ->map(static fn (Visit $visit): ?string => $visit->family_id !== null ? ($families[$visit->family_id] ?? null) : null)
@@ -183,7 +197,9 @@ class VisitorExport
             'families' => implode(', ', $hostFamilies),
             'source' => $this->source($visitor),
             'invitedBy' => $visitor->invited_by ?? '',
-            'congregation' => $visitor->inviter_congregation ?? '',
+            'congregation' => $visitor->inviter_congregation_id !== null
+                ? ($congregations[$visitor->inviter_congregation_id] ?? '')
+                : '',
             'event' => $this->event($visitor, $events),
         ];
     }

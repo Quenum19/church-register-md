@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\Source;
+use App\Models\Congregation;
 use App\Models\Family;
 use App\Models\FamilyRotation;
 use App\Models\Member;
@@ -48,14 +49,15 @@ class DemoSeeder extends Seeder
         fake()->seed(2026);
 
         $familyIds = Family::query()->pluck('id')->all();
+        $congregationIds = Congregation::query()->pluck('id')->all();
         $today = CarbonImmutable::today();
         $sundays = $this->sundays($today);
 
-        DB::transaction(function () use ($statuses, $familyIds, $today, $sundays): void {
+        DB::transaction(function () use ($statuses, $familyIds, $congregationIds, $today, $sundays): void {
             for ($i = 0; $i < self::VISITORS - 2; $i++) {
                 $count = fake()->randomElement([1, 1, 1, 1, 2, 2, 2, 3, 3, 3]);
                 $dates = $this->visitDates($sundays, $count, $today);
-                $visitor = $this->createVisitor($dates, $familyIds);
+                $visitor = $this->createVisitor($dates, $familyIds, $congregationIds);
 
                 // Environ 4 membres potentiels sur 10 ont été convertis.
                 if (count($dates) === Visit::MAX_VISITS && fake()->boolean(40)) {
@@ -73,7 +75,7 @@ class DemoSeeder extends Seeder
 
             // Deux nouveaux visiteurs aujourd'hui (statistique « new_today »).
             for ($i = 0; $i < 2; $i++) {
-                $statuses->refresh($this->createVisitor([$today], $familyIds));
+                $statuses->refresh($this->createVisitor([$today], $familyIds, $congregationIds));
             }
         });
 
@@ -83,8 +85,9 @@ class DemoSeeder extends Seeder
     /**
      * @param  list<CarbonImmutable>  $dates
      * @param  list<int>  $familyIds
+     * @param  list<int>  $congregationIds
      */
-    private function createVisitor(array $dates, array $familyIds): Visitor
+    private function createVisitor(array $dates, array $familyIds, array $congregationIds): Visitor
     {
         $first = $dates[0]->setTime(fake()->numberBetween(9, 12), fake()->numberBetween(0, 59));
         $source = fake()->randomElement(Source::cases());
@@ -95,9 +98,9 @@ class DemoSeeder extends Seeder
             'source' => $source,
             'source_other' => $source === Source::Autre ? 'Rencontre lors d\'une croisade' : null,
             'invited_by' => $source === Source::InviteMembre ? IvorianSamples::fullName() : null,
-            // Congrégation de l'invitant : facultative, nommée d'après son quartier.
-            'inviter_congregation' => $source === Source::InviteMembre && fake()->boolean(45)
-                ? fake()->randomElement(array_keys(IvorianSamples::COMMUNES))
+            // Congrégation de l'invitant : facultative, prise dans la liste de l'Église.
+            'inviter_congregation_id' => $source === Source::InviteMembre && fake()->boolean(45) && $congregationIds !== []
+                ? fake()->randomElement($congregationIds)
                 : null,
             'inviter_family_id' => $source === Source::InviteMembre && fake()->boolean(70) ? fake()->randomElement($familyIds) : null,
             'wants_whatsapp_group' => $wantsGroup,

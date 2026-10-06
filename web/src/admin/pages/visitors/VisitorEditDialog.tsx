@@ -4,6 +4,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import type { UpdateVisitorRequest, VisitorDetail } from '../../../shared/api-types'
 import { COUNTRIES, COUNTRY_CODES, findCountry, isPlausiblePhone, sanitizePhone } from '../../../shared/domain'
+import { useCongregations } from '../../api/settings'
 import { useUpdateVisitor } from '../../api/visitors'
 import { Button } from '../../components/Button'
 import { Dialog, DialogActions } from '../../components/Dialog'
@@ -20,7 +21,7 @@ const schema = z
     commune: requiredText('La commune', 80),
     quartier: requiredText('Le quartier', 80),
     invited_by: optionalText('Le nom de l’invitant', 100),
-    inviter_congregation: optionalText('La congrégation de l’invitant', 100),
+    inviter_congregation_id: z.string(),
     whatsapp_country: z.enum(COUNTRY_CODES),
     whatsapp_number: z.string().trim().max(25, 'Numéro trop long.'),
     wants_whatsapp_group: z.boolean(),
@@ -44,7 +45,7 @@ const FIELDS = [
   'commune',
   'quartier',
   'invited_by',
-  'inviter_congregation',
+  'inviter_congregation_id',
   'whatsapp_country',
   'whatsapp_number',
   'wants_whatsapp_group',
@@ -68,13 +69,14 @@ export function VisitorEditDialog({ visitor, onClose }: { visitor: VisitorDetail
       commune: visitor.commune,
       quartier: visitor.quartier,
       invited_by: visitor.invited_by ?? '',
-      inviter_congregation: visitor.inviter_congregation ?? '',
+      inviter_congregation_id: visitor.inviter_congregation ? String(visitor.inviter_congregation.id) : '',
       whatsapp_country: visitor.whatsapp ? whatsapp.country : 'CI',
       whatsapp_number: visitor.whatsapp ? whatsapp.number : '',
       wants_whatsapp_group: visitor.wants_whatsapp_group,
     },
   })
   const country = findCountry(useWatch({ control: formControl, name: 'whatsapp_country' }))
+  const congregations = useCongregations()
 
   const onSubmit = handleSubmit(async (values) => {
     setFailure(null)
@@ -84,7 +86,9 @@ export function VisitorEditDialog({ visitor, onClose }: { visitor: VisitorDetail
     if (dirtyFields.commune) body.commune = values.commune
     if (dirtyFields.quartier) body.quartier = values.quartier
     if (dirtyFields.invited_by) body.invited_by = values.invited_by || null
-    if (dirtyFields.inviter_congregation) body.inviter_congregation = values.inviter_congregation || null
+    if (dirtyFields.inviter_congregation_id) {
+      body.inviter_congregation_id = values.inviter_congregation_id ? Number(values.inviter_congregation_id) : null
+    }
     if (dirtyFields.wants_whatsapp_group) body.wants_whatsapp_group = values.wants_whatsapp_group
     if (dirtyFields.whatsapp_country || dirtyFields.whatsapp_number) {
       body.whatsapp = values.whatsapp_number
@@ -129,9 +133,17 @@ export function VisitorEditDialog({ visitor, onClose }: { visitor: VisitorDetail
           <Field label="Invité(e) par" optional error={errors.invited_by?.message}>
             {(control) => <input {...control} {...register('invited_by')} autoComplete="off" className={inputClass} />}
           </Field>
-          <Field label="Sa congrégation" optional error={errors.inviter_congregation?.message}>
+          {/* Appartenance de l’invitant, distincte de sa famille de service. */}
+          <Field label="Sa congrégation" optional error={errors.inviter_congregation_id?.message}>
             {(control) => (
-              <input {...control} {...register('inviter_congregation')} autoComplete="off" className={inputClass} />
+              <select {...control} {...register('inviter_congregation_id')} className={inputClass}>
+                <option value="">Non précisée</option>
+                {congregations.data?.map((congregation) => (
+                  <option key={congregation.id} value={congregation.id}>
+                    {congregation.name}
+                  </option>
+                ))}
+              </select>
             )}
           </Field>
         </div>

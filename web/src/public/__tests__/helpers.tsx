@@ -24,6 +24,10 @@ export const CONFIG: PublicConfig = {
     { id: 1, name: 'Puissance' },
     { id: 4, name: 'Force' },
   ],
+  congregations: [
+    { id: 1, name: 'Puissance' },
+    { id: 8, name: 'Voix de la Destinée' },
+  ],
   social_networks: [
     { key: 'facebook', label: 'Facebook', url: 'https://facebook.com/exemple' },
     { key: 'youtube', label: 'YouTube', url: 'https://youtube.com/@exemple' },

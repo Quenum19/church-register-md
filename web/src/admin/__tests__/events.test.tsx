@@ -297,6 +297,44 @@ describe('événements — droits', () => {
   })
 })
 
+describe('liste des visiteurs — filtre par congrégation de l’invitant', () => {
+  it('écrit congregation_id dans l’URL, l’envoie à l’API et le transmet aux exports', async () => {
+    const server = withSession(createMockServer()).on('GET', '/api/admin/visitors', { body: paginated([makeVisitor()]) })
+    const { user, location } = renderAdmin('/admin/visiteurs')
+    await screen.findAllByText('Awa Koné')
+
+    const select = screen.getByLabelText('Congrégation de l’invitant')
+    await waitFor(() => expect(within(select).getByRole('option', { name: 'Voix de la Destinée' })).toBeInTheDocument())
+    await user.selectOptions(select, '8')
+
+    await waitFor(() => expect(location()).toBe('/admin/visiteurs?congregation_id=8'))
+    await waitFor(() =>
+      expect(Object.fromEntries(server.last('GET', '/api/admin/visitors')?.url.searchParams ?? [])).toMatchObject({
+        congregation_id: '8',
+      }),
+    )
+    expect(screen.getByRole('link', { name: 'Exporter en CSV' })).toHaveAttribute(
+      'href',
+      '/api/admin/exports/visitors.csv?congregation_id=8',
+    )
+  })
+
+  it('retrouve les fiches où la congrégation reste à renseigner', async () => {
+    const server = withSession(createMockServer()).on('GET', '/api/admin/visitors', { body: paginated([makeVisitor()]) })
+    const { user, location } = renderAdmin('/admin/visiteurs')
+    await screen.findAllByText('Awa Koné')
+
+    await user.selectOptions(screen.getByLabelText('Congrégation de l’invitant'), 'aucune')
+
+    await waitFor(() => expect(location()).toBe('/admin/visiteurs?congregation_id=aucune'))
+    await waitFor(() =>
+      expect(Object.fromEntries(server.last('GET', '/api/admin/visitors')?.url.searchParams ?? [])).toMatchObject({
+        congregation_id: 'aucune',
+      }),
+    )
+  })
+})
+
 describe('liste des visiteurs — filtre par événement', () => {
   it('écrit event_id dans l’URL, l’envoie à l’API et le transmet aux exports', async () => {
     const server = withSession(createMockServer())

@@ -2,6 +2,7 @@
 
 use App\Enums\Source;
 use App\Models\AuditLog;
+use App\Models\Congregation;
 use App\Models\Event;
 use App\Models\Member;
 use App\Models\User;
@@ -16,6 +17,8 @@ use Tests\Feature\Admin\Support\AdminFixtures;
 beforeEach(function (): void {
     $this->travelTo(AdminFixtures::now());
     $this->families = AdminFixtures::families();
+    // Les onze congrégations sont créées par la migration : aucune fixture à poser.
+    $this->congregation = Congregation::query()->where('name', 'Voix de la Destinée')->sole();
     $this->moderator = User::factory()->moderateur()->create(['name' => 'Marie Modératrice']);
     $this->admin = User::factory()->superAdmin()->create(['name' => 'Jean Admin']);
 });
@@ -31,7 +34,7 @@ describe('GET /visitors/{id}', function (): void {
             'source' => Source::InviteMembre,
             'source_other' => null,
             'invited_by' => 'Marie K.',
-            'inviter_congregation' => 'Yopougon',
+            'inviter_congregation_id' => $this->congregation->id,
             'inviter_family_id' => $this->families['Richesse']->id,
             'wants_whatsapp_group' => false,
             'consent_at' => AdminFixtures::now()->setDate(2026, 8, 2)->setTime(9, 30),
@@ -63,7 +66,7 @@ describe('GET /visitors/{id}', function (): void {
             'source' => 'invite_membre',
             'source_other' => null,
             'invited_by' => 'Marie K.',
-            'inviter_congregation' => 'Yopougon',
+            'inviter_congregation' => ['id' => $this->congregation->id, 'name' => 'Voix de la Destinée'],
             'inviter_family' => ['id' => $this->families['Richesse']->id, 'name' => 'Richesse'],
             'wants_whatsapp_group' => false,
             'consent_at' => '2026-08-02T09:30:00+00:00',

@@ -87,6 +87,8 @@ export interface PublicConfig {
   verse: { ref: string; text: string }
   current_family: FamilyRef | null
   families: FamilyRef[]
+  /** Congrégations de l’Église, pour « Sa congrégation » (distinctes des familles de service). */
+  congregations: FamilyRef[]
   /** Uniquement les réseaux renseignés, dans l'ordre des paramètres. */
   social_networks: SocialNetwork[]
 }
@@ -127,8 +129,9 @@ export interface Visit1Answers {
   source: Source
   source_other?: string | null
   invited_by?: string | null
-  // Congrégation de la personne qui a invité : l’Église en compte plusieurs.
-  inviter_congregation?: string | null
+  // Congrégation de la personne qui a invité : l’Église en compte plusieurs, et elle est
+  // distincte de sa famille de service.
+  inviter_congregation_id?: number | null
   inviter_family_id?: number | null
   whatsapp?: PhoneInput | null
   whatsapp_same_as_phone?: boolean
@@ -245,7 +248,7 @@ export interface VisitorDetail extends VisitorSummary {
   source: Source
   source_other: string | null
   invited_by: string | null
-  inviter_congregation: string | null
+  inviter_congregation: FamilyRef | null
   inviter_family: FamilyRef | null
   wants_whatsapp_group: boolean
   consent_at: string | null
@@ -259,6 +262,9 @@ export interface MemberSummary extends VisitorSummary {
   converted_by: { id: number; name: string } | null
 }
 
+/** Valeur du filtre « congrégation » désignant les visiteurs dont elle n’est pas renseignée. */
+export const NO_CONGREGATION = 'aucune'
+
 export type VisitorSort = '-created_at' | 'created_at' | 'full_name' | '-last_visit_date'
 
 export interface VisitorFilters {
@@ -267,6 +273,8 @@ export interface VisitorFilters {
   search?: string
   status?: VisitorStatus | 'non_membre'
   family_id?: number
+  /** Identifiant de congrégation, ou « aucune » pour les fiches où elle reste à renseigner. */
+  congregation_id?: number | typeof NO_CONGREGATION
   from?: string
   to?: string
   sort?: VisitorSort
@@ -278,7 +286,7 @@ export interface UpdateVisitorRequest {
   commune?: string
   quartier?: string
   invited_by?: string | null
-  inviter_congregation?: string | null
+  inviter_congregation_id?: number | null
   wants_whatsapp_group?: boolean
 }
 

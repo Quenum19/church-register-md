@@ -1,7 +1,7 @@
 // Filtres de la liste des visiteurs : lecture/écriture dans l'URL (useSearchParams),
 // requête API et liens d'export partagent la même représentation.
 
-import type { VisitorFilters, VisitorSort } from '../../shared/api-types'
+import { NO_CONGREGATION, type VisitorFilters, type VisitorSort } from '../../shared/api-types'
 import { buildQuery } from '../../shared/http'
 import type { VisitorStatus } from '../../shared/domain'
 import { STATUS_OPTIONS } from './labels'
@@ -44,6 +44,13 @@ export function parseVisitorFilters(params: URLSearchParams): VisitorFilters {
   if (status && STATUS_FILTER_OPTIONS.some((o) => o.value === status)) filters.status = status as StatusFilter
   const family = parsePositiveInt(params.get('family_id'))
   if (family) filters.family_id = family
+  // « aucune » est une valeur de filtre à part entière : les fiches sans congrégation.
+  const congregation = params.get('congregation_id')
+  if (congregation === NO_CONGREGATION) filters.congregation_id = NO_CONGREGATION
+  else {
+    const congregationId = parsePositiveInt(congregation)
+    if (congregationId) filters.congregation_id = congregationId
+  }
   const event = parsePositiveInt(params.get('event_id'))
   if (event) filters.event_id = event
   const from = params.get('from')
@@ -72,7 +79,15 @@ export function withFilters(params: URLSearchParams, changes: Partial<Record<Fil
 }
 
 export function hasActiveFilters(filters: VisitorFilters): boolean {
-  return Boolean(filters.search || filters.status || filters.family_id || filters.event_id || filters.from || filters.to)
+  return Boolean(
+    filters.search ||
+      filters.status ||
+      filters.family_id ||
+      filters.congregation_id ||
+      filters.event_id ||
+      filters.from ||
+      filters.to,
+  )
 }
 
 export function isInvalidPeriod(filters: VisitorFilters): boolean {
@@ -85,6 +100,7 @@ export function toApiQuery(filters: VisitorFilters): Record<string, string | num
     search: filters.search,
     status: filters.status,
     family_id: filters.family_id,
+    congregation_id: filters.congregation_id,
     event_id: filters.event_id,
     from: filters.from,
     to: filters.to,
@@ -104,6 +120,7 @@ export function exportUrl(format: ExportFormat, filters: VisitorFilters): string
     search: filters.search,
     status: filters.status,
     family_id: filters.family_id,
+    congregation_id: filters.congregation_id,
     event_id: filters.event_id,
     from: filters.from,
     to: filters.to,

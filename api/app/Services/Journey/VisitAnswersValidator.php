@@ -74,9 +74,9 @@ class VisitAnswersValidator
         'answers.invited_by.required' => 'Indiquez le nom de la personne qui vous a invité(e).',
         'answers.invited_by.string' => 'Le nom de la personne qui vous a invité(e) est invalide.',
         'answers.invited_by.max' => 'Le nom de la personne qui vous a invité(e) ne doit pas dépasser :max caractères.',
-        'answers.inviter_congregation.string' => 'La congrégation de la personne qui vous a invité(e) est invalide.',
-        'answers.inviter_congregation.max' => 'La congrégation de la personne qui vous a invité(e) ne doit pas dépasser :max caractères.',
-        'answers.inviter_congregation.prohibited' => "La congrégation de l'invitant ne s'indique que pour une invitation par un membre.",
+        'answers.inviter_congregation_id.integer' => 'La congrégation sélectionnée est invalide.',
+        'answers.inviter_congregation_id.exists' => 'La congrégation sélectionnée est invalide.',
+        'answers.inviter_congregation_id.prohibited' => "La congrégation de l'invitant ne s'indique que pour une invitation par un membre.",
         'answers.inviter_family_id.integer' => 'La famille sélectionnée est invalide.',
         'answers.inviter_family_id.exists' => 'La famille sélectionnée est invalide.',
         'answers.inviter_family_id.prohibited' => "La famille de l'invitant ne s'indique que pour une invitation par un membre.",
@@ -160,15 +160,16 @@ class VisitAnswersValidator
 
         if ($source === Source::InviteMembre) {
             $rules['answers.invited_by'] = ['bail', 'required', 'string', 'max:100'];
-            // Facultative et libre : l'Église compte plusieurs congrégations, aucune liste
-            // n'est imposée au visiteur.
-            $rules['answers.inviter_congregation'] = ['bail', 'nullable', 'string', 'max:100'];
+            // Facultative : la congrégation de l'invitant n'est pas toujours connue.
+            $rules['answers.inviter_congregation_id'] = [
+                'bail', 'nullable', 'integer', Rule::exists('congregations', 'id')->where('active', true),
+            ];
             $rules['answers.inviter_family_id'] = [
                 'bail', 'nullable', 'integer', Rule::exists('families', 'id')->where('active', true),
             ];
         } else {
             // « Seulement si invite_membre » : null est accepté (le client l'envoie), une valeur est refusée.
-            $rules['answers.inviter_congregation'] = ['prohibited'];
+            $rules['answers.inviter_congregation_id'] = ['prohibited'];
             $rules['answers.inviter_family_id'] = ['prohibited'];
         }
 
@@ -201,8 +202,7 @@ class VisitAnswersValidator
         };
 
         $inviterFamily = $answers['inviter_family_id'] ?? null;
-        $congregation = $answers['inviter_congregation'] ?? null;
-        $congregation = $invited && is_string($congregation) ? trim($congregation) : '';
+        $congregation = $answers['inviter_congregation_id'] ?? null;
 
         return new VisitSubmission(1, [
             'full_name' => $answers['full_name'],
@@ -211,7 +211,7 @@ class VisitAnswersValidator
             'source' => $source,
             'source_other' => $source === Source::Autre ? $answers['source_other'] : null,
             'invited_by' => $invited ? $answers['invited_by'] : null,
-            'inviter_congregation' => $congregation === '' ? null : $congregation,
+            'inviter_congregation_id' => $invited && is_numeric($congregation) ? (int) $congregation : null,
             'inviter_family_id' => $invited && is_numeric($inviterFamily) ? (int) $inviterFamily : null,
             'whatsapp' => $whatsappE164,
             'wants_whatsapp_group' => $wantsGroup,
